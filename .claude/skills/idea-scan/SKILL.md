@@ -58,11 +58,13 @@ python3 scripts/fetch_market_data.py {SELECTED_TICKERS} > /tmp/arkwood_scan_mark
 python3 scripts/fetch_fundamentals.py {SELECTED_TICKERS} > /tmp/arkwood_scan_fundamentals.json
 python3 scripts/fetch_ark_holdings.py {SELECTED_TICKERS} > /tmp/arkwood_scan_ark.json
 python3 scripts/fetch_news.py {SELECTED_TICKERS} > /tmp/arkwood_scan_news.json
+python3 scripts/fetch_technicals.py {SELECTED_TICKERS} > /tmp/arkwood_scan_technicals.json
 python3 scripts/merge_data.py \
   /tmp/arkwood_scan_market.json \
   /tmp/arkwood_scan_fundamentals.json \
   /tmp/arkwood_scan_ark.json \
-  /tmp/arkwood_scan_news.json > /tmp/arkwood_scan_merged.json
+  /tmp/arkwood_scan_news.json \
+  /tmp/arkwood_scan_technicals.json > /tmp/arkwood_scan_merged.json
 python3 scripts/compute_scores.py /tmp/arkwood_scan_merged.json > /tmp/arkwood_scan_scores.json
 ```
 
@@ -93,6 +95,11 @@ ARK ETF exposure and conviction level.
 **TVS Score (abbreviated):**
 Show auto_total and key manual scores. Full breakdown not required.
 
+**Technical Timing:**
+Read `technical_overlay` from `/tmp/arkwood_scan_scores.json`.
+`Technical Timing: {overlay_rating} ({bullish_count}/4 signals bullish) — {one sentence on trend + momentum state, e.g. "UPTREND, RSI 54, not extended — constructive entry timing."}`
+If technicals unavailable: note "Technical data unavailable."
+
 ---
 
 ## Step 5: Watchlist Recommendation
@@ -100,10 +107,11 @@ Show auto_total and key manual scores. Full breakdown not required.
 End each ticker analysis with:
 
 **Watchlist Recommendation: STRONG ADD / ADD / MONITOR / PASS**
-- **STRONG ADD:** TVS auto_total ≥ 30, strong innovation fit, current price at or below target_entry in watchlist.csv
+- **STRONG ADD:** TVS auto_total ≥ 30, strong innovation fit, price at or below target_entry, AND overlay is not EXTENDED and not AVOID
+- **STRONG ADD → "ADD — wait for pullback":** TVS auto_total ≥ 30 and strong fit, but overlay is EXTENDED — quality confirmed, timing poor, enter on pullback not at current price
 - **ADD:** TVS auto_total 20–29, good fit, within 10% of target_entry
-- **MONITOR:** Good thesis but expensive or waiting for a catalyst
-- **PASS:** Weak ARKWOOD fit, poor fundamentals, or fragility flags
+- **MONITOR:** Good thesis but expensive, EXTENDED, or waiting for a catalyst
+- **PASS:** Weak ARKWOOD fit, poor fundamentals, fragility flags, or overlay is AVOID
 
 **Suggested entry price range:** Based on upside_to_consensus and analyst targets.
 e.g., "Entry range: $X – $Y (consensus target implies X% upside from current price)"

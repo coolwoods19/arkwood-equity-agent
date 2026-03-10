@@ -25,40 +25,109 @@ Read `data/portfolio.csv`. Extract all tickers into a list. Also read `data/watc
 
 Run scripts sequentially. If a script fails (non-zero exit or error JSON), note the failure and continue — do not abort the run.
 
+**Portfolio tickers:**
 ```bash
 python3 scripts/fetch_market_data.py {TICKER_LIST} > /tmp/arkwood_daily_market.json
 python3 scripts/fetch_fundamentals.py {TICKER_LIST} > /tmp/arkwood_daily_fundamentals.json
 python3 scripts/fetch_ark_holdings.py {TICKER_LIST} > /tmp/arkwood_daily_ark.json
 python3 scripts/fetch_news.py {TICKER_LIST} > /tmp/arkwood_daily_news.json
+python3 scripts/fetch_technicals.py {TICKER_LIST} > /tmp/arkwood_daily_technicals.json
 python3 scripts/merge_data.py \
   /tmp/arkwood_daily_market.json \
   /tmp/arkwood_daily_fundamentals.json \
   /tmp/arkwood_daily_ark.json \
-  /tmp/arkwood_daily_news.json > /tmp/arkwood_daily_merged.json
+  /tmp/arkwood_daily_news.json \
+  /tmp/arkwood_daily_technicals.json > /tmp/arkwood_daily_merged.json
 python3 scripts/compute_scores.py /tmp/arkwood_daily_merged.json > /tmp/arkwood_daily_scores.json
 ```
+
+**Watchlist tickers** (run separately — use {WATCHLIST_TICKER_LIST} from watchlist.csv):
+```bash
+python3 scripts/fetch_market_data.py {WATCHLIST_TICKER_LIST} > /tmp/arkwood_wl_market.json
+python3 scripts/fetch_fundamentals.py {WATCHLIST_TICKER_LIST} > /tmp/arkwood_wl_fundamentals.json
+python3 scripts/fetch_technicals.py {WATCHLIST_TICKER_LIST} > /tmp/arkwood_wl_technicals.json
+python3 scripts/merge_data.py \
+  /tmp/arkwood_wl_market.json \
+  /tmp/arkwood_wl_fundamentals.json \
+  /tmp/arkwood_wl_technicals.json > /tmp/arkwood_wl_merged.json
+python3 scripts/compute_scores.py /tmp/arkwood_wl_merged.json > /tmp/arkwood_wl_scores.json
+```
+
+Note: Watchlist fetch skips ARK and news scripts to keep it fast. If a watchlist fetch fails, note and continue — do not abort.
 
 ---
 
 ## Step 3: Check Alerts
 
-For each ticker in portfolio.csv, compare `current_price` from market data to `alert_below` and `alert_above` columns.
+For each ticker in portfolio.csv, run all checks below. Accumulate all triggered alerts into a single ALERTS list. Each entry has: `alert_category`, `ticker`, `message`, `emoji`, `confidence`, `recommended_action`.
 
-Build an **ALERTS** list:
+### 3a. Price Alerts (existing)
+
+Compare `current_price` from market data to `alert_below` and `alert_above` columns:
 - `PRICE BELOW ALERT: {TICKER} @ ${current_price} — below alert level ${alert_below} ({pct}% below)`
 - `PRICE ABOVE ALERT: {TICKER} @ ${current_price} — above alert level ${alert_above} ({pct}% above)`
 
-Also check for **thesis drift**: find the most recent prior snapshot in `data/snapshots/` for each ticker (file pattern: `YYYYMMDD_{TICKER}.json` or `YYYYMMDD_portfolio_snapshot.json`). If the auto_total score in today's scores drops more than 10 points vs the prior snapshot, flag: `SCORE ALERT: {TICKER} TVS auto_total dropped from {prior} to {current}`.
+### 3b. Thesis Drift Alert (existing)
 
-If no prior snapshot exists for a ticker, note "First run — no prior snapshot for comparison."
+Find the most recent prior snapshot in `data/snapshots/` (pattern: `YYYYMMDD_portfolio_scores.json` first, then `YYYYMMDD_portfolio_snapshot.json`). If `auto_total` in today's scores drops more than 10 points vs prior:
+- `SCORE ALERT: {TICKER} TVS auto_total dropped from {prior} to {current}`
+
+If no prior snapshot exists for a ticker: note "First run — no prior snapshot for comparison."
+
+### 3c. Technical Overlay Alerts (new)
+
+Read `technical_overlay` from `/tmp/arkwood_daily_scores.json` for each ticker.
+If `technical_overlay` is null for a ticker (technicals fetch failed), skip 3c for that ticker and note missing data.
+
+**TVS tier** (use `auto_total` when full manual TVS is unavailable):
+- `auto_total ≥ 30` → BUY-tier
+- `auto_total ≥ 22` → HOLD-tier
+- `auto_total < 22` → SELL-tier
+
+**Alert matrix — apply in order, first matching rule per ticker wins:**
+
+| Priority | Condition | Category | Emoji | Recommended Action |
+|----------|-----------|----------|-------|--------------------|
+| 1 | TVS tier == SELL | CONFIRMED_SELL | 🔴 | SELL |
+| 2 | HOLD-tier AND overlay == EXTENDED | EXTENDED_TRIM | 🔴 | TRIM |
+| 3 | overlay == AVOID (bearish_count ≥ 2) | RISK | 🔴 | REVIEW_THESIS |
+| 4 | BUY-tier AND overlay == EXTENDED | WAIT | 🟡 | HOLD_WAIT_PULLBACK |
+| 5 | BUY-tier AND overlay == NEUTRAL | WAIT | 🟡 | HOLD_WAIT |
+| 6 | overlay SETUP/STRONG_SETUP AND all 4 guardrails pass (see below) | SETUP_FORMING | 🔵 | WATCH_CLOSELY |
+| 7 | BUY-tier AND overlay SETUP or STRONG_SETUP | OPPORTUNITY | 🟢 | ADD |
+
+**SETUP_FORMING guardrails — ALL four must be true to fire rule 6:**
+1. `overlay_rating` today is SETUP or STRONG_SETUP
+2. Prior `YYYYMMDD_portfolio_scores.json` exists AND `bullish_count` today > `bullish_count` in prior snapshot
+3. `auto_total` today ≥ `auto_total` in prior snapshot (no TVS drift downward)
+4. `current_weight < max_weight` from portfolio.csv, where `current_weight = (shares × current_price) / total_portfolio_value`
+
+**Confidence assignment:**
+- HIGH: STRONG_SETUP with bullish_count ≥ 3, OR AVOID with bearish_count ≥ 2
+- MEDIUM: SETUP with exactly 2 bullish signals, OR single dominant signal
+- LOW: borderline cases, missing technicals data
+
+### 3d. Watchlist Entry Opportunity Alerts (new)
+
+Read `/tmp/arkwood_wl_scores.json` and cross-reference with `watchlist.csv` (`target_entry`, `priority`).
+
+For each watchlist ticker, evaluate:
+
+| Verdict | Conditions | Emoji |
+|---------|-----------|-------|
+| ENTRY_OPPORTUNITY | auto_total ≥ 20 AND overlay SETUP or STRONG_SETUP AND price ≤ target_entry × 1.05 (within 5%) | 🟢 |
+| APPROACHING | auto_total ≥ 20 AND overlay SETUP or STRONG_SETUP AND price within 15% above target_entry | 🟡 |
+| WATCH | auto_total ≥ 20 AND overlay NEUTRAL or EXTENDED | 🟡 |
+| AVOID | overlay == AVOID (bearish_count ≥ 2) | 🔴 |
+| NOT_YET | all other cases | — (omit from alerts, include only in Watchlist Pulse section) |
+
+Only add ENTRY_OPPORTUNITY, APPROACHING, and AVOID verdicts to the main ALERTS list (to appear in Telegram). WATCH and NOT_YET are shown in the Watchlist Pulse section only.
 
 ---
 
 ## Step 4: Write the Report
 
 Report file: `reports/{YYYYMMDD}_daily_monitor.md`
-
-Use this exact structure:
 
 ```
 # ARKWOOD Daily Portfolio Briefing — {DATE}
@@ -68,14 +137,24 @@ Data quality: [note any PARTIAL/EMPTY sources]
 ---
 
 ## Portfolio Alerts
-{ALERTS list, or "No alerts today."}
+
+### Technical Alerts
+{RISK / EXTENDED_TRIM / CONFIRMED_SELL / WAIT / OPPORTUNITY / SETUP_FORMING alerts from Step 3c}
+
+### Price Alerts
+{PRICE BELOW/ABOVE ALERT entries from Step 3a}
+
+### Score Alerts
+{SCORE ALERT entries from Step 3b}
+
+{If none in any category: "No alerts today."}
 
 ---
 
 ## Portfolio Summary Table
 
-| Ticker | Shares | Avg Cost | Purchase Value | Current Price | Current Value | P&L ($) | P&L (%) | Rating | TVS Score | Action |
-|--------|--------|----------|---------------|--------------|--------------|---------|---------|--------|-----------|--------|
+| Ticker | Shares | Avg Cost | Current Price | Current Value | P&L ($) | P&L (%) | TVS Auto | Overlay | Action |
+|--------|--------|----------|--------------|--------------|---------|---------|----------|---------|--------|
 
 **Total Portfolio Value:** ${sum of current values}
 **Total P&L:** ${total pnl} ({total pnl %})
@@ -100,7 +179,8 @@ Distribution by portfolio weight:
 For each holding, write 2–4 sentences covering:
 1. What changed overnight (price move, news)
 2. Score delta vs prior snapshot (if available)
-3. Recommended action if anything has changed: BUY MORE / HOLD / TRIM / WATCH / SELL
+3. Technical overlay: current rating and what it means for timing
+4. Recommended action if anything has changed: BUY MORE / HOLD / TRIM / WATCH / SELL
 
 Flag stale data explicitly if a field is missing.
 
@@ -108,17 +188,53 @@ Flag stale data explicitly if a field is missing.
 
 ## Watchlist Pulse
 
-For each ticker in watchlist.csv: one line update.
-Format: `{TICKER} — ${current_price} | {1-sentence note on any significant price move or news}`
-If no market data is available, note "Data unavailable."
+For each ticker in watchlist.csv, show a structured entry signal line:
+
+```
+{EMOJI} {TICKER} — ${current_price} | TVS: {auto_total} | Overlay: {overlay_rating} | vs Target: {pct_vs_target}% {above/below} ${target_entry} | {VERDICT} — {one sentence}
+```
+
+Verdict and emoji:
+- 🟢 **ENTRY_OPPORTUNITY** — price at/below target, quality setup, buy signal active
+- 🟡 **APPROACHING** — quality setup but price still above target; monitor for dip
+- 🟡 **WATCH** — fundamentals OK but technically NEUTRAL or EXTENDED; no entry yet
+- 🔴 **AVOID** — technical structure broken (overlay AVOID); wait for recovery
+- ⚪ **NOT YET** — price too far above target, or TVS too low
+
+If market or technicals data unavailable for a ticker: note "Data unavailable — cannot score."
 ```
 
 ---
 
 ## Step 5: Send Telegram Notification
 
+Build an alerts-only message from the ALERTS list compiled in Step 3.
+
+Sort by priority: 🔴 first, then 🟡, then 🟢, then 🔵.
+
+Format:
+```
+ARKWOOD Daily Alerts — {YYYY-MM-DD}
+
+🔴 {CATEGORY}: {TICKER} — {one-line message}
+🟡 {CATEGORY}: {TICKER} — {one-line message}
+🟢 {CATEGORY}: {TICKER} — {one-line message}
+🔵 {CATEGORY}: {TICKER} — {one-line message}
+
+{N} alerts · Full report: reports/{YYYYMMDD}_daily_monitor.md
+```
+
+If no alerts triggered:
+```
+ARKWOOD Daily Alerts — {YYYY-MM-DD}
+
+All clear. No alerts today.
+Full report: reports/{YYYYMMDD}_daily_monitor.md
+```
+
+Send via:
 ```bash
-python3 scripts/notify_telegram.py --report reports/{YYYYMMDD}_daily_monitor.md
+python3 scripts/notify_telegram.py --message "{formatted_message}"
 ```
 
 ---
@@ -127,6 +243,7 @@ python3 scripts/notify_telegram.py --report reports/{YYYYMMDD}_daily_monitor.md
 
 ```bash
 cp /tmp/arkwood_daily_merged.json data/snapshots/{YYYYMMDD}_portfolio_snapshot.json
+cp /tmp/arkwood_daily_scores.json data/snapshots/{YYYYMMDD}_portfolio_scores.json
 ```
 
 Do NOT commit reports/ or snapshots/ to git.

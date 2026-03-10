@@ -59,6 +59,92 @@ def score_ark_conviction(conviction_level: str) -> tuple[int, str]:
     return mapping.get(conviction_level, (0, "ARK conviction unknown"))
 
 
+EXTENDED_SMA50_THRESHOLD = 0.15  # >15% above SMA50 triggers EXTENDED overlay
+
+
+def compute_technical_overlay(technicals: dict) -> dict:
+    """
+    Computes the technical overlay from a single ticker's technicals sub-dict.
+    Returns overlay dict with signals, bullish/bearish counts, overlay_rating, and notes.
+    overlay_rating priority (first match wins):
+        1. EXTENDED:     momentum == OVERBOUGHT OR price_vs_sma50_pct > 0.15
+        2. AVOID:        bearish_count >= 2
+        3. STRONG_SETUP: bullish_count >= 3 AND bearish_count == 0
+        4. SETUP:        bullish_count >= 2 AND bearish_count <= 1
+        5. NEUTRAL:      all other cases
+    """
+    trend = technicals.get("trend_signal", "FLAT")
+    momentum = technicals.get("momentum_signal", "NEUTRAL")
+    breakout = technicals.get("breakout_signal", "RANGE")
+    rs = technicals.get("rs_signal", "IN_LINE")
+    price_vs_sma50_pct = technicals.get("price_vs_sma50_pct")
+    rsi_14 = technicals.get("rsi_14")
+
+    signals = {
+        "trend": trend,
+        "momentum": momentum,
+        "breakout": breakout,
+        "relative_strength": rs,
+    }
+
+    bullish_signals = []
+    bearish_signals = []
+
+    if trend == "UPTREND":
+        bullish_signals.append("trend")
+    elif trend == "DOWNTREND":
+        bearish_signals.append("trend")
+
+    if momentum == "BULLISH":
+        bullish_signals.append("momentum")
+    elif momentum in ("OVERBOUGHT", "OVERSOLD"):
+        bearish_signals.append("momentum")
+
+    if breakout == "BREAKING_OUT":
+        bullish_signals.append("breakout")
+    elif breakout == "BREAKING_DOWN":
+        bearish_signals.append("breakout")
+
+    if rs == "LEADING":
+        bullish_signals.append("relative_strength")
+    elif rs == "LAGGING":
+        bearish_signals.append("relative_strength")
+
+    bullish_count = len(bullish_signals)
+    bearish_count = len(bearish_signals)
+
+    # Determine overlay_rating (first match wins)
+    extended_by_rsi = momentum == "OVERBOUGHT"
+    extended_by_sma = price_vs_sma50_pct is not None and price_vs_sma50_pct > EXTENDED_SMA50_THRESHOLD
+
+    if extended_by_rsi or extended_by_sma:
+        overlay_rating = "EXTENDED"
+    elif bearish_count >= 2:
+        overlay_rating = "AVOID"
+    elif bullish_count >= 3 and bearish_count == 0:
+        overlay_rating = "STRONG_SETUP"
+    elif bullish_count >= 2 and bearish_count <= 1:
+        overlay_rating = "SETUP"
+    else:
+        overlay_rating = "NEUTRAL"
+
+    return {
+        "signals": signals,
+        "bullish_signals": bullish_signals,
+        "bearish_signals": bearish_signals,
+        "bullish_count": bullish_count,
+        "bearish_count": bearish_count,
+        "overlay_rating": overlay_rating,
+        "overlay_notes": {
+            "rsi_14": rsi_14,
+            "price_vs_sma50_pct": price_vs_sma50_pct,
+            "sma_50": technicals.get("sma_50"),
+            "sma_200": technicals.get("sma_200"),
+            "price_vs_52w_high_pct": technicals.get("price_vs_52w_high_pct"),
+        },
+    }
+
+
 def score_ticker(ticker: str, data: dict) -> dict:
     market = data.get("market", {})
     fundamentals = data.get("fundamentals", {})
@@ -132,6 +218,12 @@ def score_ticker(ticker: str, data: dict) -> dict:
 
     auto_total = sum(auto_scores.values())
 
+    # --- Technical Overlay (separate from TVS — does not affect auto_total) ---
+    technicals = data.get("technicals", {})
+    technical_overlay = None
+    if technicals and not technicals.get("_missing"):
+        technical_overlay = compute_technical_overlay(technicals)
+
     return {
         "auto_scores": auto_scores,
         "auto_total": auto_total,
@@ -146,6 +238,7 @@ def score_ticker(ticker: str, data: dict) -> dict:
         "max_possible_auto": 45,   # sum of all auto-scored max values
         "max_possible_total": 125,
         "notes": notes,
+        "technical_overlay": technical_overlay,
     }
 
 
@@ -172,7 +265,7 @@ def main():
 
     output = {
         "scored_at": datetime.now(timezone.utc).isoformat(),
-        "rubric_version": "1.0",
+        "rubric_version": "1.1",
         "scores": scores,
     }
     print(json.dumps(output, indent=2))

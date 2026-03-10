@@ -26,10 +26,10 @@ def load_json(path: str) -> dict:
 def main():
     paths = sys.argv[1:]
     if len(paths) < 3:
-        print(json.dumps({"error": "Usage: merge_data.py market.json fundamentals.json ark.json [news.json]"}))
+        print(json.dumps({"error": "Usage: merge_data.py market.json fundamentals.json ark.json [news.json] [technicals.json]"}))
         sys.exit(1)
 
-    key_names = ["market", "fundamentals", "ark", "news"]
+    key_names = ["market", "fundamentals", "ark", "news", "technicals"]
     files = {}
     for i, path in enumerate(paths):
         key = key_names[i] if i < len(key_names) else f"source_{i}"

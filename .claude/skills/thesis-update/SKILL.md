@@ -35,11 +35,13 @@ python3 scripts/fetch_market_data.py {TICKER} > /tmp/arkwood_thesis_market.json
 python3 scripts/fetch_fundamentals.py {TICKER} > /tmp/arkwood_thesis_fundamentals.json
 python3 scripts/fetch_ark_holdings.py {TICKER} > /tmp/arkwood_thesis_ark.json
 python3 scripts/fetch_news.py {TICKER} > /tmp/arkwood_thesis_news.json
+python3 scripts/fetch_technicals.py {TICKER} > /tmp/arkwood_thesis_technicals.json
 python3 scripts/merge_data.py \
   /tmp/arkwood_thesis_market.json \
   /tmp/arkwood_thesis_fundamentals.json \
   /tmp/arkwood_thesis_ark.json \
-  /tmp/arkwood_thesis_news.json > /tmp/arkwood_thesis_merged.json
+  /tmp/arkwood_thesis_news.json \
+  /tmp/arkwood_thesis_technicals.json > /tmp/arkwood_thesis_merged.json
 python3 scripts/compute_scores.py /tmp/arkwood_thesis_merged.json > /tmp/arkwood_thesis_scores.json
 ```
 
@@ -59,6 +61,17 @@ Then assess:
 - New TVS auto_total from scores vs prior (if prior snapshot exists in `data/snapshots/`)
 - ARK conviction change (if any)
 - Key news events since last review
+
+### Technical Signal Check
+
+Read `technical_overlay` from `/tmp/arkwood_thesis_scores.json`.
+
+State whether technicals confirm or contradict the thesis direction:
+- **Confirms thesis:** overlay is SETUP or STRONG_SETUP and trend is UPTREND
+- **Neutral:** overlay is NEUTRAL or EXTENDED (extended may signal near-term risk even if thesis intact)
+- **Contradicts thesis:** overlay is AVOID or trend is DOWNTREND on a conviction BUY thesis
+
+Include one line: `Technical Overlay: {overlay_rating} ({bullish_count}/4 bullish) — {confirms/neutral/contradicts} thesis direction.`
 
 ---
 

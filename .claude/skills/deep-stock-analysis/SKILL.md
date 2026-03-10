@@ -39,7 +39,8 @@ python3 scripts/fetch_market_data.py {TICKERS} > /tmp/arkwood_market.json
 python3 scripts/fetch_fundamentals.py {TICKERS} > /tmp/arkwood_fundamentals.json
 python3 scripts/fetch_ark_holdings.py {TICKERS} > /tmp/arkwood_ark.json
 python3 scripts/fetch_news.py {TICKERS} > /tmp/arkwood_news.json
-python3 scripts/merge_data.py /tmp/arkwood_market.json /tmp/arkwood_fundamentals.json /tmp/arkwood_ark.json /tmp/arkwood_news.json > /tmp/arkwood_merged.json
+python3 scripts/fetch_technicals.py {TICKERS} > /tmp/arkwood_technicals.json
+python3 scripts/merge_data.py /tmp/arkwood_market.json /tmp/arkwood_fundamentals.json /tmp/arkwood_ark.json /tmp/arkwood_news.json /tmp/arkwood_technicals.json > /tmp/arkwood_merged.json
 python3 scripts/compute_scores.py /tmp/arkwood_merged.json > /tmp/arkwood_scores.json
 ```
 
@@ -67,6 +68,25 @@ Rating:
 - 80–99 → **BUY**
 - 60–79 → **HOLD**
 - < 60 → **SELL**
+
+---
+
+## Step 3b: Technical Overlay
+
+Read `technical_overlay` from `/tmp/arkwood_scores.json` for each ticker.
+If `technical_overlay` is null (technicals data missing), note "Technical data unavailable" and skip this step for that ticker.
+
+Present the overlay as a table:
+
+| Signal | Raw Value | Rating |
+|--------|-----------|--------|
+| Trend (SMA50 vs SMA200) | SMA50 ${sma_50} vs SMA200 ${sma_200} | {trend_signal} |
+| Momentum (RSI-14) | RSI {rsi_14} | {momentum_signal} |
+| Breakout (vs 52-week range) | {price_vs_52w_high_pct}% from 52w high | {breakout_signal} |
+| Relative Strength (vs SPY) | {return_3m} vs SPY {spy_return_3m} (3m) | {rs_signal} |
+| **Overall Overlay** | {bullish_count}/4 bullish signals | **{overlay_rating}** |
+
+Follow with 2–3 sentences of timing commentary covering trend direction, momentum state, and whether this is a constructive or cautious entry point technically.
 
 ---
 
@@ -115,6 +135,14 @@ Core products/services, business model, revenue scale, role in the innovation la
 - Profitability or credible path to profitability (FCF, operating income)
 - Cash, debt, and cash runway for loss-making companies
 - Capex and R&D intensity
+
+#### 4b. Technical Setup & Timing
+
+Paste the overlay table from Step 3b here.
+
+**Timing Commentary:** [2–3 sentences on trend direction, momentum state, whether technically extended or constructive, and any specific flags — e.g. "EXTENDED — RSI 78, +20% above SMA50, wait for pullback" or "SETUP — golden cross intact, RSI healthy at 54, not extended."]
+
+---
 
 #### 5. Valuation (P/E & Forward P/E)
 - Trailing P/E and Forward P/E vs historical range and sector/peer averages
@@ -177,6 +205,25 @@ Core products/services, business model, revenue scale, role in the innovation la
 **Conviction: High / Medium / Low**
 
 #### 12. Rating, Scenarios & Ark-Fit Summary
+
+**Core TVS Score: {RATING} ({final_score}/125)**
+**Technical Overlay: {overlay_rating} ({bullish_count}/4 bullish signals)**
+
+→ **Portfolio Action: {ACTION}** — {one-sentence rationale}
+
+Portfolio Action matrix:
+- STRONG BUY + STRONG_SETUP/SETUP → **ADD**
+- STRONG BUY + NEUTRAL → **BUY** (no urgency on timing)
+- STRONG BUY + EXTENDED → **HOLD** — wait for pullback before adding
+- STRONG BUY + AVOID → **HOLD** — quality intact, technicals deteriorating; monitor closely
+- BUY + STRONG_SETUP/SETUP → **ADD**
+- BUY + NEUTRAL/EXTENDED → **HOLD**
+- BUY + AVOID → **REVIEW** — flag for thesis check
+- HOLD + EXTENDED → **TRIM**
+- HOLD/SELL + AVOID → **SELL / REDUCE**
+- SELL + any → **SELL**
+
+---
 
 **Bull Case (1-year):** Price target, key assumptions, what has to go right
 **Base Case (1-year):** Price target, most likely scenario
