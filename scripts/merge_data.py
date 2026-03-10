@@ -29,11 +29,20 @@ def main():
         print(json.dumps({"error": "Usage: merge_data.py market.json fundamentals.json ark.json [news.json] [technicals.json]"}))
         sys.exit(1)
 
-    key_names = ["market", "fundamentals", "ark", "news", "technicals"]
+    AS_OF_TO_KEY = {
+        "realtime": "market",
+        "trailing-12m": "fundamentals",
+        "daily": "ark",
+        "last-30-days": "news",
+        "technicals": "technicals",
+    }
+    positional_keys = ["market", "fundamentals", "ark", "news", "technicals"]
     files = {}
     for i, path in enumerate(paths):
-        key = key_names[i] if i < len(key_names) else f"source_{i}"
-        files[key] = load_json(path)
+        data = load_json(path)
+        as_of = data.get("as_of")
+        key = AS_OF_TO_KEY.get(as_of) or (positional_keys[i] if i < len(positional_keys) else f"source_{i}")
+        files[key] = data
 
     # Collect all ticker symbols across all files
     all_tickers = set()
