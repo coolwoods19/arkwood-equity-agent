@@ -100,18 +100,41 @@ def fetch_ticker(symbol: str) -> dict:
 
         filtered = []
         for item in raw_news:
-            pub_ts = item.get("providerPublishTime", 0)
+            # yfinance ≥0.2.x nests article data under item['content']
+            content = item.get("content") or item
+            title = content.get("title") or item.get("title", "")
+
+            # pubDate is ISO string in new schema; providerPublishTime is unix int in old schema
+            pub_date_str = content.get("pubDate") or content.get("displayTime", "")
+            if pub_date_str:
+                try:
+                    from datetime import datetime as _dt
+                    pub_ts = int(_dt.fromisoformat(pub_date_str.replace("Z", "+00:00")).timestamp())
+                except Exception:
+                    pub_ts = 0
+            else:
+                pub_ts = item.get("providerPublishTime", 0)
+
             if pub_ts < cutoff_ts:
                 continue
-            title = item.get("title", "")
+
+            publisher = (
+                content.get("provider", {}).get("displayName")
+                or item.get("publisher", "")
+            )
+            link = (
+                content.get("canonicalUrl", {}).get("url")
+                or item.get("link", "")
+            )
+
             sentiment = classify_sentiment(title)
             pub_dt = datetime.fromtimestamp(pub_ts, tz=timezone.utc).isoformat() if pub_ts else None
             filtered.append({
                 "title": title,
-                "publisher": item.get("publisher", ""),
+                "publisher": publisher,
                 "published_at": pub_dt,
                 "published_ts": pub_ts,
-                "link": item.get("link", ""),
+                "link": link,
                 "sentiment_hint": sentiment,
             })
 

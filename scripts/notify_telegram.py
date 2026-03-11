@@ -36,6 +36,22 @@ def get_env() -> tuple[str, str]:
     return token, chat_id
 
 
+def strip_markdown(text: str) -> str:
+    """Remove markdown formatting so Telegram receives clean plain text."""
+    # Bold/italic: **text** -> text, *text* -> text, _text_ -> text
+    text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
+    text = re.sub(r"\*(.+?)\*", r"\1", text)
+    text = re.sub(r"_(.+?)_", r"\1", text)
+    # Inline code and code blocks
+    text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
+    text = re.sub(r"`(.+?)`", r"\1", text)
+    # Markdown table separators (|---|)
+    text = re.sub(r"^\|[-| :]+\|$", "", text, flags=re.MULTILINE)
+    # Collapse 3+ blank lines to 2
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
 def extract_summary_from_report(path: str) -> str:
     """
     Extract a concise summary from the daily monitor markdown report.
@@ -59,8 +75,8 @@ def extract_summary_from_report(path: str) -> str:
         r"## Portfolio Alerts\n(.*?)(?=\n---|\n## )", content, re.DOTALL
     )
     if alerts_match:
-        summary_parts.append("*Portfolio Alerts*")
-        summary_parts.append(alerts_match.group(1).strip())
+        summary_parts.append("--- Portfolio Alerts ---")
+        summary_parts.append(strip_markdown(alerts_match.group(1).strip()))
         summary_parts.append("")
 
     # Extract Portfolio Summary Table (table rows only, max 20 lines)
@@ -69,17 +85,18 @@ def extract_summary_from_report(path: str) -> str:
     )
     if table_match:
         table_text = table_match.group(1).strip()
-        table_lines = table_text.splitlines()[:22]  # header + up to 20 rows
-        summary_parts.append("*Portfolio Summary*")
-        summary_parts.append("```")
+        table_lines = [
+            l for l in table_text.splitlines()
+            if l.strip() and not re.match(r"^\|[-| :]+\|$", l.strip())
+        ][:21]  # header + up to 20 data rows
+        summary_parts.append("--- Portfolio Summary ---")
         summary_parts.append("\n".join(table_lines))
-        summary_parts.append("```")
         summary_parts.append("")
 
     # Extract Total P&L line
     pnl_match = re.search(r"\*\*Total P&L.*?\*\*.*", content)
     if pnl_match:
-        summary_parts.append(pnl_match.group(0))
+        summary_parts.append(strip_markdown(pnl_match.group(0)))
         summary_parts.append("")
 
     # Extract Portfolio Health Score (first 3 lines of that section)
@@ -88,10 +105,10 @@ def extract_summary_from_report(path: str) -> str:
     )
     if health_match:
         health_lines = health_match.group(1).strip().splitlines()[:4]
-        summary_parts.append("*Portfolio Health*")
-        summary_parts.append("\n".join(health_lines))
+        summary_parts.append("--- Portfolio Health ---")
+        summary_parts.append(strip_markdown("\n".join(health_lines)))
 
-    result = "\n".join(summary_parts)
+    result = strip_markdown("\n".join(summary_parts))
 
     # Truncate to Telegram limit, preserving whole lines
     if len(result) > MAX_MESSAGE_CHARS:
@@ -107,7 +124,7 @@ def send_message(token: str, chat_id: str, text: str) -> bool:
     payload = {
         "chat_id": chat_id,
         "text": text,
-        "parse_mode": "Markdown",
+        # No parse_mode — plain text is safe regardless of report content
     }
     try:
         resp = requests.post(url, json=payload, timeout=15)
