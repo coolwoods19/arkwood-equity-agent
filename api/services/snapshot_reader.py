@@ -5,9 +5,26 @@ Rating logic lives here — frontend receives a string, never computes it.
 """
 
 import json
+import math
 from pathlib import Path
 from typing import Optional
 from datetime import date, datetime
+
+
+def _safe(v):
+    """Return None for NaN/Inf floats so FastAPI can serialize the response."""
+    if isinstance(v, float) and not math.isfinite(v):
+        return None
+    return v
+
+
+def _sanitize(obj):
+    """Recursively replace NaN/Inf floats with None throughout a nested structure."""
+    if isinstance(obj, dict):
+        return {k: _sanitize(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_sanitize(v) for v in obj]
+    return _safe(obj)
 
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
 SNAPSHOTS_DIR = DATA_DIR / "snapshots"
@@ -25,7 +42,7 @@ def derive_rating(auto_total: Optional[int], overlay_rating: Optional[str]) -> O
         return "STRONG BUY"
     if auto_total >= 30 and overlay != "AVOID":
         return "BUY"
-    if auto_total >= 20:
+    if auto_total >= 22:
         return "HOLD"
     return "SELL"
 
@@ -179,7 +196,7 @@ def build_portfolio_response(holdings_csv: list[dict]) -> dict:
     total_unrealized_pnl = round(total_market_value - total_cost_basis, 2) if total_market_value else None
     total_unrealized_pnl_pct = round((total_market_value - total_cost_basis) / total_cost_basis, 6) if total_cost_basis else None
 
-    return {
+    return _sanitize({
         "snapshot_date": snapshot_date,
         "snapshot_days_old": days_old,
         "holdings": result_holdings,
@@ -189,7 +206,7 @@ def build_portfolio_response(holdings_csv: list[dict]) -> dict:
             "total_unrealized_pnl_pct": total_unrealized_pnl_pct,
             "active_alerts": active_alerts,
         },
-    }
+    })
 
 
 # ---------------------------------------------------------------------------
@@ -253,7 +270,7 @@ def build_ticker_detail(ticker: str, holding_csv: Optional[dict], watchlist_csv:
             "alert_above": h.get("alert_above"),
         }
 
-    return {
+    return _sanitize({
         "ticker": ticker,
         "snapshot_date": get_latest_snapshot_date(),
         "rating": derive_rating(auto_total, overlay_rating),
@@ -264,7 +281,7 @@ def build_ticker_detail(ticker: str, holding_csv: Optional[dict], watchlist_csv:
             "beta": market_raw.get("beta"),
             "fifty_two_week_high": market_raw.get("fifty_two_week_high"),
             "fifty_two_week_low": market_raw.get("fifty_two_week_low"),
-            "ytd_return": market_raw.get("ytd_return"),
+            "ytd_return": _safe(market_raw.get("ytd_return")),
             "sector": market_raw.get("sector"),
             "industry": market_raw.get("industry"),
             "price_history_30d": market_raw.get("price_history_30d") or [],
@@ -330,4 +347,4 @@ def build_ticker_detail(ticker: str, holding_csv: Optional[dict], watchlist_csv:
         },
         "holding": holding_out,
         "thesis_markdown": thesis_markdown,
-    }
+    })
