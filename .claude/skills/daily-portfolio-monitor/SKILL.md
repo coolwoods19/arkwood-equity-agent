@@ -38,8 +38,13 @@ python3 scripts/merge_data.py \
   /tmp/arkwood_daily_ark.json \
   /tmp/arkwood_daily_news.json \
   /tmp/arkwood_daily_technicals.json > /tmp/arkwood_daily_merged.json
-python3 scripts/compute_scores.py /tmp/arkwood_daily_merged.json > /tmp/arkwood_daily_scores.json
+python3 scripts/compute_scores.py /tmp/arkwood_daily_merged.json \
+  --portfolio data/portfolio.csv \
+  --prior data/snapshots/{MOST_RECENT_YYYYMMDD}_portfolio_scores.json \
+  > /tmp/arkwood_daily_scores.json
 ```
+
+Replace `{MOST_RECENT_YYYYMMDD}` with the date of the most recent `YYYYMMDD_portfolio_scores.json` in `data/snapshots/` (ls sorted descending). If no prior snapshot exists, omit the `--prior` flag.
 
 **Watchlist tickers** (run separately — use {WATCHLIST_TICKER_LIST} from watchlist.csv):
 ```bash
@@ -74,38 +79,39 @@ Find the most recent prior snapshot in `data/snapshots/` (pattern: `YYYYMMDD_por
 
 If no prior snapshot exists for a ticker: note "First run — no prior snapshot for comparison."
 
-### 3c. Technical Overlay Alerts (new)
+### 3c. V2 Strategy Alerts
 
-Read `technical_overlay` from `/tmp/arkwood_daily_scores.json` for each ticker.
-If `technical_overlay` is null for a ticker (technicals fetch failed), skip 3c for that ticker and note missing data.
+Read `v2_signal` from `/tmp/arkwood_daily_scores.json` for each ticker. Also read the top-level `macro_state` field.
+If `v2_signal` is null or `v2_action` is `DATA_MISSING`, skip 3c for that ticker and note missing data.
 
-**TVS tier** (use `auto_total` when full manual TVS is unavailable):
-- `auto_total ≥ 30` → BUY-tier
-- `auto_total ≥ 22` → HOLD-tier
-- `auto_total < 22` → SELL-tier
+**V2 alert matrix — map `v2_action` to alert category and emoji:**
 
-**Alert matrix — apply in order, first matching rule per ticker wins:**
+| v2_action | Category | Emoji | Priority |
+|-----------|----------|-------|----------|
+| `SELL` | SELL | 🔴 | 1 (highest) |
+| `WATCH_EXIT` | WATCH_EXIT | 🔴 | 2 |
+| `RISK_OFF_HOLD` | MACRO_RISK | 🟠 | 3 |
+| `HOLD_EXTENDED` | EXTENDED | 🟡 | 4 |
+| `WAIT` | WAIT | 🟡 | 5 |
+| `ADD` | OPPORTUNITY | 🟢 | 6 |
+| `HOLD` | — | omit from alerts | — |
 
-| Priority | Condition | Category | Emoji | Recommended Action |
-|----------|-----------|----------|-------|--------------------|
-| 1 | TVS tier == SELL | CONFIRMED_SELL | 🔴 | SELL |
-| 2 | HOLD-tier AND overlay == EXTENDED | EXTENDED_TRIM | 🔴 | TRIM |
-| 3 | overlay == AVOID (bearish_count ≥ 2) | RISK | 🔴 | REVIEW_THESIS |
-| 4 | BUY-tier AND overlay == EXTENDED | WAIT | 🟡 | HOLD_WAIT_PULLBACK |
-| 5 | BUY-tier AND overlay == NEUTRAL | WAIT | 🟡 | HOLD_WAIT |
-| 6 | overlay SETUP/STRONG_SETUP AND all 4 guardrails pass (see below) | SETUP_FORMING | 🔵 | WATCH_CLOSELY |
-| 7 | BUY-tier AND overlay SETUP or STRONG_SETUP | OPPORTUNITY | 🟢 | ADD |
-
-**SETUP_FORMING guardrails — ALL four must be true to fire rule 6:**
-1. `overlay_rating` today is SETUP or STRONG_SETUP
-2. Prior `YYYYMMDD_portfolio_scores.json` exists AND `bullish_count` today > `bullish_count` in prior snapshot
-3. `auto_total` today ≥ `auto_total` in prior snapshot (no TVS drift downward)
-4. `current_weight < max_weight` from portfolio.csv, where `current_weight = (shares × current_price) / total_portfolio_value`
+For each alert, include in the message:
+- `stock_class` (COMPOUNDER / CYCLICAL / HIGH_VOL / EMERGING)
+- `overlay_rating`
+- `v2_rationale` (already explains the rule that fired)
+- `consecutive_avoid` if true (COMPOUNDER patience rule context)
+- `persistence_confirmed` if relevant (HIGH_VOL 2-week confirmation)
 
 **Confidence assignment:**
-- HIGH: STRONG_SETUP with bullish_count ≥ 3, OR AVOID with bearish_count ≥ 2
-- MEDIUM: SETUP with exactly 2 bullish signals, OR single dominant signal
-- LOW: borderline cases, missing technicals data
+- HIGH: `v2_action == SELL` with consecutive_avoid, OR `v2_action == ADD` with overlay STRONG_SETUP
+- MEDIUM: `v2_action == SELL` (single AVOID for non-COMPOUNDER), OR `v2_action == ADD` with overlay SETUP
+- LOW: `v2_action == WATCH_EXIT`, WAIT, or any DATA_MISSING case
+
+**Also add a macro banner at the top of the Technical Alerts section:**
+- If `macro_state == RISK_ON`: "🟢 MACRO: RISK_ON — SPY above SMA200. All entry signals active."
+- If `macro_state == RISK_OFF`: "🔴 MACRO: RISK_OFF — SPY below SMA200. No new entries. Exits accelerated."
+- If `macro_state == UNKNOWN`: "⚠️ MACRO: UNKNOWN — SPY SMA200 data unavailable."
 
 ### 3d. Watchlist Entry Opportunity Alerts (new)
 
@@ -153,8 +159,8 @@ Data quality: [note any PARTIAL/EMPTY sources]
 
 ## Portfolio Summary Table
 
-| Ticker | Shares | Avg Cost | Current Price | Current Value | P&L ($) | P&L (%) | TVS Auto | Overlay | Action |
-|--------|--------|----------|--------------|--------------|---------|---------|----------|---------|--------|
+| Ticker | Class | Shares | Avg Cost | Current Price | Current Value | P&L ($) | P&L (%) | TVS Auto | Overlay | V2 Action |
+|--------|-------|--------|----------|--------------|--------------|---------|---------|----------|---------|-----------|
 
 **Total Portfolio Value:** ${sum of current values}
 **Total P&L:** ${total pnl} ({total pnl %})

@@ -171,20 +171,40 @@ def classify_rs(
 
 def fetch_spy_returns() -> dict:
     """
-    Fetches SPY 1y history once. Returns spy_return_1m and spy_return_3m.
-    Returns None values if fetch fails — non-fatal.
+    Fetches SPY 1y history once.
+    Returns spy_return_1m, spy_return_3m, spy_sma_200, spy_current_price, and macro_state.
+    macro_state = RISK_ON  if SPY price > SPY SMA200
+                = RISK_OFF if SPY price <= SPY SMA200
+                = UNKNOWN  if data unavailable
+    Returns None/UNKNOWN values if fetch fails — non-fatal.
     """
+    empty = {
+        "spy_return_1m": None,
+        "spy_return_3m": None,
+        "spy_sma_200": None,
+        "spy_current_price": None,
+        "macro_state": "UNKNOWN",
+    }
     try:
         hist = yf.Ticker("SPY").history(period="1y")
         if hist.empty:
-            return {"spy_return_1m": None, "spy_return_3m": None}
+            return empty
         closes = hist["Close"]
+        spy_sma_200 = compute_sma(closes, SMA_LONG)
+        spy_current_price = round(float(closes.iloc[-1]), 4) if len(closes) > 0 else None
+        if spy_current_price is not None and spy_sma_200 is not None:
+            macro_state = "RISK_ON" if spy_current_price > spy_sma_200 else "RISK_OFF"
+        else:
+            macro_state = "UNKNOWN"
         return {
             "spy_return_1m": compute_return(closes, 21),
             "spy_return_3m": compute_return(closes, 63),
+            "spy_sma_200": spy_sma_200,
+            "spy_current_price": spy_current_price,
+            "macro_state": macro_state,
         }
     except Exception:
-        return {"spy_return_1m": None, "spy_return_3m": None}
+        return empty
 
 
 def fetch_ticker(symbol: str, spy_returns: dict) -> dict:
@@ -317,6 +337,9 @@ def main():
     output = {
         "fetched_at": datetime.now(timezone.utc).isoformat(),
         "as_of": "technicals",
+        "macro_state": spy_returns.get("macro_state", "UNKNOWN"),
+        "spy_current_price": spy_returns.get("spy_current_price"),
+        "spy_sma_200": spy_returns.get("spy_sma_200"),
         "tickers": results,
     }
     print(json.dumps(output, indent=2))

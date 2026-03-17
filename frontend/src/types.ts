@@ -4,6 +4,9 @@ export type OverlayRating = 'STRONG_SETUP' | 'SETUP' | 'NEUTRAL' | 'AVOID' | 'EX
 export type Rating = 'STRONG BUY' | 'BUY' | 'HOLD' | 'SELL'
 export type DataQuality = 'FULL' | 'PARTIAL' | 'EMPTY' | 'UNKNOWN'
 export type AlertDirection = 'BELOW' | 'ABOVE'
+export type V2Action = 'SELL' | 'WATCH_EXIT' | 'RISK_OFF_HOLD' | 'HOLD_EXTENDED' | 'ADD' | 'WAIT' | 'HOLD' | 'DATA_MISSING'
+export type StockClass = 'COMPOUNDER' | 'CYCLICAL' | 'HIGH_VOL' | 'EMERGING' | 'UNKNOWN'
+export type MacroState = 'RISK_ON' | 'RISK_OFF' | 'UNKNOWN'
 
 export interface Holding {
   ticker: string
@@ -28,6 +31,11 @@ export interface Holding {
   rating: Rating | null
   data_quality: DataQuality
   has_thesis: boolean
+  stock_class: StockClass | null
+  v2_action: V2Action | null
+  v2_rationale: string | null
+  consecutive_avoid: boolean | null
+  persistence_confirmed: boolean | null
 }
 
 export interface PortfolioTotals {
@@ -40,6 +48,7 @@ export interface PortfolioTotals {
 export interface PortfolioResponse {
   snapshot_date: string | null
   snapshot_days_old: number | null
+  macro_state: MacroState | null
   holdings: Holding[]
   portfolio_totals: PortfolioTotals
 }
@@ -126,6 +135,17 @@ export interface TechnicalOverlay {
   }
 }
 
+export interface V2Signal {
+  stock_class: StockClass | null
+  macro_state: MacroState | null
+  v2_action: V2Action | null
+  v2_rationale: string | null
+  consecutive_avoid: boolean | null
+  persistence_confirmed: boolean | null
+  entry_allowed: boolean | null
+  exit_triggered: boolean | null
+}
+
 export interface Scores {
   auto_scores: Record<string, number>
   auto_total: number | null
@@ -133,6 +153,7 @@ export interface Scores {
   max_possible_total: number
   manual_scores_needed: Record<string, number | null>
   notes: Record<string, string>
+  v2_signal: V2Signal | null
   technical_overlay: TechnicalOverlay | null
 }
 
@@ -172,6 +193,8 @@ export interface TickerDetail {
   news: NewsData
   holding: HoldingInfo | null
   thesis_markdown: string | null
+  stock_class: StockClass | null
+  macro_state: MacroState | null
   watchlist: {
     why_watching: string
     target_entry: number | null

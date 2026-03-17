@@ -1,6 +1,6 @@
 import type { Holding, WatchlistItem } from '../types'
 import { OverlayBadge } from './OverlayBadge'
-import { RatingPill } from './RatingPill'
+import { V2ActionBadge } from './V2ActionBadge'
 import { fmtPrice, fmtPct, signClass } from '../utils/formatters'
 
 interface Props {
@@ -36,8 +36,11 @@ export function Sidebar({ holdings, watchlist, selected, onSelect }: Props) {
                 {h.alert_triggered && (
                   <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" title={`Alert: price ${h.alert_direction === 'BELOW' ? 'below' : 'above'} threshold`} />
                 )}
+                {h.stock_class && (
+                  <span className="text-[9px] font-mono text-ink-4 border border-border rounded px-1">{h.stock_class}</span>
+                )}
               </span>
-              <RatingPill rating={h.rating} />
+              <V2ActionBadge action={h.v2_action} small />
             </div>
 
             <div className="flex items-center justify-between">
@@ -73,7 +76,7 @@ export function Sidebar({ holdings, watchlist, selected, onSelect }: Props) {
           >
             <div className="flex items-center justify-between mb-1">
               <span className="font-mono font-semibold text-sm text-ink tracking-wide">{w.ticker}</span>
-              {w.rating ? <RatingPill rating={w.rating} /> : <span className="text-[10px] text-ink-4">Watching</span>}
+              <span className="text-[10px] text-ink-4">Watching</span>
             </div>
             <div className="flex items-center justify-between">
               <OverlayBadge rating={w.overlay_rating} small />

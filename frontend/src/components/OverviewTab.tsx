@@ -1,6 +1,7 @@
 import { LineChart, Line, ResponsiveContainer, Tooltip, YAxis } from 'recharts'
 import type { TickerDetail } from '../types'
 import { OverlayBadge } from './OverlayBadge'
+import { V2ActionBadge } from './V2ActionBadge'
 import { fmtPrice, fmtPct, fmtPctRaw, fmtMultiple, fmtRsi, fmtLargeNumber, signClass } from '../utils/formatters'
 
 function KpiCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
@@ -33,6 +34,7 @@ function SignalRow({ label, value }: { label: string; value: string | null }) {
 export function OverviewTab({ detail }: { detail: TickerDetail }) {
   const { market, fundamentals, technicals, scores } = detail
   const overlay = scores.technical_overlay
+  const v2 = scores.v2_signal
   const history = market.price_history_30d
 
   const pe = fundamentals.trailing_pe && fundamentals.trailing_pe > 0 ? fundamentals.trailing_pe : null
@@ -86,6 +88,36 @@ export function OverviewTab({ detail }: { detail: TickerDetail }) {
             <SignalRow label="Momentum (RSI-14)" value={technicals.momentum_signal} />
             <SignalRow label="Breakout (52w range)" value={technicals.breakout_signal} />
             <SignalRow label="Relative Strength (vs SPY)" value={technicals.rs_signal} />
+          </div>
+        </div>
+      )}
+
+      {/* V2 Strategy signal */}
+      {v2 && v2.v2_action && (
+        <div>
+          <p className="text-[10px] font-mono uppercase tracking-widest text-ink-3 mb-3">V2 Strategy</p>
+          <div className="bg-surface rounded-lg border border-border px-4 py-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-ink-2">Action</span>
+              <V2ActionBadge action={v2.v2_action} />
+            </div>
+            {detail.stock_class && (
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-ink-2">Class</span>
+                <span className="text-xs font-mono text-ink-2">{detail.stock_class}</span>
+              </div>
+            )}
+            {detail.macro_state && (
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-ink-2">Macro</span>
+                <span className={`text-xs font-mono font-semibold ${detail.macro_state === 'RISK_ON' ? 'text-emerald-700' : detail.macro_state === 'RISK_OFF' ? 'text-red-700' : 'text-ink-3'}`}>
+                  {detail.macro_state}
+                </span>
+              </div>
+            )}
+            {v2.v2_rationale && (
+              <p className="text-[11px] text-ink-3 pt-1 border-t border-border">{v2.v2_rationale}</p>
+            )}
           </div>
         </div>
       )}

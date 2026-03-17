@@ -53,6 +53,7 @@ def read_portfolio() -> list[dict]:
                 "thesis_confidence": row.get("thesis_confidence", "").strip().upper() or None,
                 "last_reviewed": row.get("last_reviewed", "").strip() or None,
                 "notes": row.get("notes", "").strip() or None,
+                "stock_class": row.get("stock_class", "").strip().upper() or None,
             })
     return holdings
 

@@ -156,6 +156,7 @@ def build_portfolio_response(holdings_csv: list[dict]) -> dict:
         overlay = score.get("technical_overlay") or {}
         overlay_rating = overlay.get("overlay_rating")
         auto_total = score.get("auto_total")
+        v2 = score.get("v2_signal") or {}
 
         # Determine data quality (minimum across market + fundamentals + technicals)
         qualities = [
@@ -191,14 +192,24 @@ def build_portfolio_response(holdings_csv: list[dict]) -> dict:
             "rating": derive_rating(auto_total, overlay_rating),
             "data_quality": data_quality,
             "has_thesis": thesis_file.exists(),
+            "stock_class": h.get("stock_class"),
+            "v2_action": v2.get("v2_action"),
+            "v2_rationale": v2.get("v2_rationale"),
+            "consecutive_avoid": v2.get("consecutive_avoid"),
+            "persistence_confirmed": v2.get("persistence_confirmed"),
         })
 
     total_unrealized_pnl = round(total_market_value - total_cost_basis, 2) if total_market_value else None
     total_unrealized_pnl_pct = round((total_market_value - total_cost_basis) / total_cost_basis, 6) if total_cost_basis else None
 
+    macro_state = scores_data.get("macro_state") or (
+        snapshot.get("sources", {}).get("technicals", {}).get("macro_state")
+    )
+
     return _sanitize({
         "snapshot_date": snapshot_date,
         "snapshot_days_old": days_old,
+        "macro_state": macro_state,
         "holdings": result_holdings,
         "portfolio_totals": {
             "total_market_value": round(total_market_value, 2),
@@ -324,6 +335,7 @@ def build_ticker_detail(ticker: str, holding_csv: Optional[dict], watchlist_csv:
             "max_possible_total": score.get("max_possible_total", 125),
             "manual_scores_needed": score.get("manual_scores_needed") or {},
             "notes": score.get("notes") or {},
+            "v2_signal": score.get("v2_signal"),
             "technical_overlay": {
                 "overlay_rating": overlay_rating,
                 "bullish_signals": overlay.get("bullish_signals") or [],
@@ -347,4 +359,6 @@ def build_ticker_detail(ticker: str, holding_csv: Optional[dict], watchlist_csv:
         },
         "holding": holding_out,
         "thesis_markdown": thesis_markdown,
+        "stock_class": holding_csv.get("stock_class") if holding_csv else None,
+        "macro_state": scores_data.get("macro_state"),
     })

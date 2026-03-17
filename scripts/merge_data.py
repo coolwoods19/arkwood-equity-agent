@@ -59,16 +59,22 @@ def main():
             else:
                 merged[ticker][key] = data.get("tickers", {}).get(ticker, {"_missing": True})
 
+    def source_meta(key: str, data: dict) -> dict:
+        meta = {
+            "fetched_at": data.get("fetched_at"),
+            "as_of": data.get("as_of"),
+            "data_quality": data.get("data_quality", "UNKNOWN"),
+        }
+        # Preserve macro gate fields from technicals source
+        if key == "technicals":
+            meta["macro_state"] = data.get("macro_state", "UNKNOWN")
+            meta["spy_current_price"] = data.get("spy_current_price")
+            meta["spy_sma_200"] = data.get("spy_sma_200")
+        return meta
+
     output = {
         "merged_at": datetime.now(timezone.utc).isoformat(),
-        "sources": {
-            key: {
-                "fetched_at": data.get("fetched_at"),
-                "as_of": data.get("as_of"),
-                "data_quality": data.get("data_quality", "UNKNOWN"),
-            }
-            for key, data in files.items()
-        },
+        "sources": {key: source_meta(key, data) for key, data in files.items()},
         "tickers": merged,
     }
     print(json.dumps(output, indent=2))

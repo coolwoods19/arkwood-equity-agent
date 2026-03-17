@@ -31,9 +31,217 @@ TVS Rubric:
 """
 
 import sys
+import csv
 import json
+import argparse
 from datetime import datetime, timezone
 
+
+# ---------------------------------------------------------------------------
+# V2 Strategy: Stock Classification + Macro Gate
+# ---------------------------------------------------------------------------
+
+STOCK_CLASSES = {"COMPOUNDER", "CYCLICAL", "HIGH_VOL", "EMERGING"}
+
+
+def load_portfolio_classes(portfolio_path: str) -> dict:
+    """Read stock_class column from portfolio.csv. Returns {ticker: class}."""
+    classes = {}
+    try:
+        with open(portfolio_path, newline="") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                ticker = row.get("ticker", "").strip().upper()
+                cls = row.get("stock_class", "").strip().upper()
+                if ticker and cls in STOCK_CLASSES:
+                    classes[ticker] = cls
+    except (FileNotFoundError, KeyError):
+        pass
+    return classes
+
+
+def load_prior_overlays(prior_path: str) -> dict:
+    """
+    Read prior overlay_rating per ticker from a prior scores JSON.
+    Returns {ticker: overlay_rating}.
+    Used for consecutive-signal detection (COMPOUNDER 2x AVOID, HIGH_VOL persistence).
+    """
+    overlays = {}
+    try:
+        with open(prior_path) as f:
+            prior = json.load(f)
+        for ticker, score in prior.get("scores", {}).items():
+            overlay = score.get("technical_overlay") or {}
+            rating = overlay.get("overlay_rating")
+            if rating:
+                overlays[ticker] = rating
+    except (FileNotFoundError, json.JSONDecodeError):
+        pass
+    return overlays
+
+
+def compute_v2_signal(
+    stock_class: str,
+    overlay_rating: "str | None",
+    macro_state: str,
+    prior_overlay: "str | None",
+) -> dict:
+    """
+    V2 strategy signal: applies macro gate + stock classification entry/exit rules.
+
+    Entry rules by class (macro RISK_ON required for all):
+      COMPOUNDER   — SETUP or STRONG_SETUP
+      CYCLICAL     — STRONG_SETUP only (higher bar)
+      HIGH_VOL     — SETUP or STRONG_SETUP + 2-week persistence
+                     (prior overlay must also be SETUP/STRONG_SETUP)
+      EMERGING     — STRONG_SETUP only
+
+    Exit rules by class:
+      COMPOUNDER   — 2 consecutive AVOID weeks required (patience rule)
+                     First AVOID week → WATCH_EXIT warning only
+      CYCLICAL     — single AVOID signal → exit immediately
+      HIGH_VOL     — single AVOID signal → exit immediately
+      EMERGING     — single AVOID signal → exit immediately
+
+    Macro RISK_OFF overrides:
+      - Blocks all new entries regardless of overlay
+      - Accelerates exits: any AVOID triggers immediate exit for all classes
+    """
+    if overlay_rating is None:
+        return {
+            "stock_class": stock_class,
+            "macro_state": macro_state,
+            "entry_allowed": False,
+            "exit_triggered": False,
+            "consecutive_avoid": False,
+            "persistence_confirmed": None,
+            "v2_action": "DATA_MISSING",
+            "v2_rationale": "Technical overlay unavailable — cannot apply V2 rules.",
+        }
+
+    risk_off = macro_state == "RISK_OFF"
+    is_avoid = overlay_rating == "AVOID"
+    is_setup = overlay_rating in ("SETUP", "STRONG_SETUP")
+    is_strong_setup = overlay_rating == "STRONG_SETUP"
+    is_extended = overlay_rating == "EXTENDED"
+
+    consecutive_avoid = prior_overlay == "AVOID" and is_avoid
+
+    # --- Entry rules ---
+    persistence_confirmed = None
+    if risk_off:
+        entry_allowed = False
+    elif stock_class == "COMPOUNDER":
+        entry_allowed = is_setup
+    elif stock_class == "CYCLICAL":
+        entry_allowed = is_strong_setup
+    elif stock_class == "HIGH_VOL":
+        persistence_confirmed = (
+            prior_overlay in ("SETUP", "STRONG_SETUP") and is_setup
+        )
+        entry_allowed = bool(persistence_confirmed)
+    elif stock_class == "EMERGING":
+        entry_allowed = is_strong_setup
+    else:
+        entry_allowed = is_setup  # UNKNOWN class: standard fallback
+
+    # --- Exit rules (for existing positions) ---
+    if stock_class == "COMPOUNDER":
+        exit_triggered = consecutive_avoid
+        warn_exit = is_avoid and not consecutive_avoid  # first AVOID week
+    else:
+        exit_triggered = is_avoid
+        warn_exit = False
+
+    # Macro RISK_OFF: accelerate exits — AVOID triggers immediate exit for all classes
+    if risk_off and is_avoid:
+        exit_triggered = True
+        warn_exit = False
+
+    # --- Determine v2_action ---
+    if exit_triggered:
+        v2_action = "SELL"
+        parts = [f"{stock_class} | {macro_state} | overlay={overlay_rating}"]
+        if stock_class == "COMPOUNDER" and consecutive_avoid:
+            parts.append("2nd consecutive AVOID — patience rule exhausted, exit triggered")
+        if risk_off:
+            parts.append("RISK_OFF macro accelerated exit")
+        v2_rationale = ". ".join(parts) + "."
+
+    elif warn_exit:
+        v2_action = "WATCH_EXIT"
+        v2_rationale = (
+            f"{stock_class} | {macro_state} | First AVOID week. "
+            "COMPOUNDER patience rule: need 2 consecutive AVOID weeks to exit. "
+            "Monitor closely next week."
+        )
+
+    elif risk_off:
+        v2_action = "RISK_OFF_HOLD"
+        v2_rationale = (
+            f"{stock_class} | RISK_OFF (SPY below SMA200). "
+            "No new entries permitted. Hold existing position until macro turns RISK_ON."
+        )
+
+    elif is_extended:
+        v2_action = "HOLD_EXTENDED"
+        v2_rationale = (
+            f"{stock_class} | {macro_state} | EXTENDED overlay. "
+            "Do not add — overbought or too far above SMA50. Hold, wait for pullback."
+        )
+
+    elif entry_allowed:
+        v2_action = "ADD"
+        if stock_class == "HIGH_VOL" and persistence_confirmed:
+            v2_rationale = (
+                f"HIGH_VOL | {macro_state} | overlay={overlay_rating} — "
+                f"2nd consecutive setup week (prior={prior_overlay}). "
+                "Persistence confirmed. Entry signal active."
+            )
+        else:
+            v2_rationale = (
+                f"{stock_class} | {macro_state} | overlay={overlay_rating}. "
+                "Entry conditions met."
+            )
+
+    elif stock_class == "CYCLICAL" and is_setup and not is_strong_setup:
+        v2_action = "WAIT"
+        v2_rationale = (
+            f"CYCLICAL | {macro_state} | overlay=SETUP — STRONG_SETUP required for CYCLICAL entry. "
+            "Hold. Wait for stronger signal before adding."
+        )
+
+    elif stock_class == "HIGH_VOL" and is_setup and not persistence_confirmed:
+        prior_desc = prior_overlay or "none"
+        v2_action = "WAIT"
+        v2_rationale = (
+            f"HIGH_VOL | {macro_state} | overlay={overlay_rating} but persistence not yet confirmed "
+            f"(prior week={prior_desc}). Need 2 consecutive SETUP/STRONG_SETUP weeks. "
+            "Hold — check again next week."
+        )
+
+    else:
+        v2_action = "HOLD"
+        v2_rationale = (
+            f"{stock_class} | {macro_state} | overlay={overlay_rating}. "
+            "No entry or exit signal. Hold current position."
+        )
+
+    return {
+        "stock_class": stock_class,
+        "macro_state": macro_state,
+        "entry_allowed": entry_allowed,
+        "exit_triggered": exit_triggered,
+        "consecutive_avoid": consecutive_avoid,
+        "persistence_confirmed": persistence_confirmed,
+        "v2_action": v2_action,
+        "v2_rationale": v2_rationale,
+    }
+
+
+# ---------------------------------------------------------------------------
+# TVS Scoring
+# ---------------------------------------------------------------------------
 
 def score_peg(peg_estimate) -> tuple[int, str]:
     """Returns (score, rationale) for PEG-based valuation."""
@@ -145,8 +353,7 @@ def compute_technical_overlay(technicals: dict) -> dict:
     }
 
 
-def score_ticker(ticker: str, data: dict) -> dict:
-    market = data.get("market", {})
+def score_ticker(data: dict) -> dict:
     fundamentals = data.get("fundamentals", {})
     ark = data.get("ark", {})
     news = data.get("news", {})
@@ -243,29 +450,66 @@ def score_ticker(ticker: str, data: dict) -> dict:
 
 
 def main():
-    if len(sys.argv) < 2:
-        print(json.dumps({"error": "Usage: compute_scores.py merged.json"}))
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="ARKWOOD TVS scorer (V2)")
+    parser.add_argument("merged", help="Path to merged JSON file")
+    parser.add_argument(
+        "--portfolio",
+        default="data/portfolio.csv",
+        help="Path to portfolio.csv (reads stock_class column). Default: data/portfolio.csv",
+    )
+    parser.add_argument(
+        "--prior",
+        default=None,
+        help="Path to prior scores JSON for consecutive-signal detection (optional)",
+    )
+    args = parser.parse_args()
 
-    path = sys.argv[1]
     try:
-        with open(path) as f:
+        with open(args.merged) as f:
             merged = json.load(f)
     except FileNotFoundError:
-        print(json.dumps({"error": f"File not found: {path}"}))
+        print(json.dumps({"error": f"File not found: {args.merged}"}))
         sys.exit(1)
     except json.JSONDecodeError as e:
         print(json.dumps({"error": f"JSON parse error: {e}"}))
         sys.exit(1)
 
+    # Load stock classifications from portfolio.csv
+    portfolio_classes = load_portfolio_classes(args.portfolio)
+
+    # Load prior overlay ratings for consecutive-signal detection
+    prior_overlays = load_prior_overlays(args.prior) if args.prior else {}
+
+    # Read macro state from technicals source metadata (set by fetch_technicals.py)
+    macro_state = (
+        merged.get("sources", {})
+              .get("technicals", {})
+              .get("macro_state", "UNKNOWN")
+    )
+
     tickers_data = merged.get("tickers", {})
     scores = {}
     for ticker, data in tickers_data.items():
-        scores[ticker] = score_ticker(ticker, data)
+        score = score_ticker(data)
+
+        # Attach V2 signal
+        stock_class = portfolio_classes.get(ticker, "UNKNOWN")
+        overlay = score.get("technical_overlay") or {}
+        overlay_rating = overlay.get("overlay_rating") if overlay else None
+        prior_overlay = prior_overlays.get(ticker)
+
+        score["v2_signal"] = compute_v2_signal(
+            stock_class=stock_class,
+            overlay_rating=overlay_rating,
+            macro_state=macro_state,
+            prior_overlay=prior_overlay,
+        )
+        scores[ticker] = score
 
     output = {
         "scored_at": datetime.now(timezone.utc).isoformat(),
-        "rubric_version": "1.1",
+        "rubric_version": "2.0",
+        "macro_state": macro_state,
         "scores": scores,
     }
     print(json.dumps(output, indent=2))

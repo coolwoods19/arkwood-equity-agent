@@ -1,17 +1,18 @@
 import { useState, useRef, useCallback } from 'react'
-import type { PortfolioTotals, RefreshEvent, RefreshComplete } from '../types'
+import type { PortfolioTotals, RefreshEvent, RefreshComplete, MacroState } from '../types'
 import { fmtPrice, fmtPct, signClass } from '../utils/formatters'
 
 interface Props {
   totals: PortfolioTotals | null
   snapshotDate: string | null
   snapshotDaysOld: number | null
+  macroState: MacroState | null
   onRefreshComplete: () => void
 }
 
 type LogEntry = { step: string; status: 'running' | 'done' | 'error'; message: string }
 
-export function Header({ totals, snapshotDate, snapshotDaysOld, onRefreshComplete }: Props) {
+export function Header({ totals, snapshotDate, snapshotDaysOld, macroState, onRefreshComplete }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [log, setLog] = useState<LogEntry[]>([])
@@ -78,6 +79,18 @@ export function Header({ totals, snapshotDate, snapshotDaysOld, onRefreshComplet
         {snapshotDaysOld != null && snapshotDaysOld > 1 && (
           <span className="text-[10px] font-mono bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded">
             Data as of {snapshotDate} ({snapshotDaysOld}d old)
+          </span>
+        )}
+
+        {/* Macro state banner */}
+        {macroState === 'RISK_ON' && (
+          <span className="text-[10px] font-mono bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded">
+            RISK_ON · SPY above SMA200
+          </span>
+        )}
+        {macroState === 'RISK_OFF' && (
+          <span className="text-[10px] font-mono bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 rounded">
+            RISK_OFF · SPY below SMA200 — no new entries
           </span>
         )}
 

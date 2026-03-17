@@ -39,6 +39,7 @@ function App() {
         totals={portfolio?.portfolio_totals ?? null}
         snapshotDate={portfolio?.snapshot_date ?? null}
         snapshotDaysOld={portfolio?.snapshot_days_old ?? null}
+        macroState={portfolio?.macro_state ?? null}
         onRefreshComplete={handleRefreshComplete}
       />
       <div className="flex-1 flex overflow-hidden">
