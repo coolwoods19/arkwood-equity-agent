@@ -149,6 +149,9 @@ export interface V2Signal {
 export interface Scores {
   auto_scores: Record<string, number>
   auto_total: number | null
+  manual_total: number | null
+  tvs_total: number | null
+  score_status: 'AUTO_ONLY' | 'FULL_TVS'
   max_possible_auto: number
   max_possible_total: number
   manual_scores_needed: Record<string, number | null>

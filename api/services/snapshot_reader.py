@@ -35,6 +35,7 @@ SNAPSHOTS_DIR = DATA_DIR / "snapshots"
 # ---------------------------------------------------------------------------
 
 def derive_rating(auto_total: Optional[int], overlay_rating: Optional[str]) -> Optional[str]:
+    """Derive a dashboard rating from the mechanically scored auto subtotal."""
     if auto_total is None:
         return None
     overlay = overlay_rating or "NEUTRAL"
@@ -331,6 +332,9 @@ def build_ticker_detail(ticker: str, holding_csv: Optional[dict], watchlist_csv:
         "scores": {
             "auto_scores": score.get("auto_scores") or {},
             "auto_total": auto_total,
+            "manual_total": score.get("manual_total"),
+            "tvs_total": score.get("tvs_total"),
+            "score_status": score.get("score_status", "AUTO_ONLY"),
             "max_possible_auto": score.get("max_possible_auto", 45),
             "max_possible_total": score.get("max_possible_total", 125),
             "manual_scores_needed": score.get("manual_scores_needed") or {},

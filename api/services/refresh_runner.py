@@ -4,7 +4,6 @@ Async SSE generator that orchestrates the full data refresh pipeline.
 Runs fetch scripts as subprocesses, emits progress events, writes snapshots.
 
 Lock file: data/.refresh.lock (project-specific)
-Chain is shielded from SSE client disconnects via asyncio.shield().
 """
 
 import asyncio
@@ -18,12 +17,29 @@ from typing import AsyncIterator, Optional
 ROOT_DIR = Path(__file__).parent.parent.parent
 DATA_DIR = ROOT_DIR / "data"
 SNAPSHOTS_DIR = DATA_DIR / "snapshots"
+REPORTS_DIR = ROOT_DIR / "reports"
 SCRIPTS_DIR = ROOT_DIR / "scripts"
 LOCK_FILE = DATA_DIR / ".refresh.lock"
 
 
 def _sse_event(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data)}\n\n"
+
+
+def _ensure_runtime_dirs() -> None:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    SNAPSHOTS_DIR.mkdir(parents=True, exist_ok=True)
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _latest_prior_scores(current_date: str) -> Optional[Path]:
+    """Return the latest score snapshot older than current_date, if one exists."""
+    candidates = []
+    for path in SNAPSHOTS_DIR.glob("*_portfolio_scores.json"):
+        date_part = path.name.split("_", 1)[0]
+        if date_part.isdigit() and date_part < current_date:
+            candidates.append(path)
+    return sorted(candidates)[-1] if candidates else None
 
 
 async def _run_script(args: list[str], step: str) -> tuple[bool, str, str]:
@@ -41,6 +57,7 @@ async def _run_script(args: list[str], step: str) -> tuple[bool, str, str]:
 
 async def _refresh_chain(tickers: list[str]) -> AsyncIterator[str]:
     """The actual refresh pipeline. Yields SSE event strings."""
+    _ensure_runtime_dirs()
     ticker_args = tickers
     start_time = time.monotonic()
     steps_succeeded: list[str] = []
@@ -149,8 +166,12 @@ async def _refresh_chain(tickers: list[str]) -> AsyncIterator[str]:
         # Phase 3: compute scores
         yield _sse_event("progress", {"step": "compute_scores", "status": "running", "message": "Computing TVS scores..."})
         t0 = time.monotonic()
+        score_args = [str(SCRIPTS_DIR / "compute_scores.py"), str(snapshot_path)]
+        prior_scores = _latest_prior_scores(date_str)
+        if prior_scores:
+            score_args.extend(["--prior", str(prior_scores)])
         success, stdout, stderr = await _run_script(
-            [str(SCRIPTS_DIR / "compute_scores.py"), str(snapshot_path)],
+            score_args,
             "compute_scores",
         )
         elapsed = round(time.monotonic() - t0, 1)
@@ -191,10 +212,8 @@ async def _refresh_chain(tickers: list[str]) -> AsyncIterator[str]:
 
 
 async def run_refresh(tickers: list[str]) -> AsyncIterator[str]:
-    """
-    Entry point. Acquires lock, runs chain via asyncio.shield so the chain
-    continues even if the SSE client disconnects.
-    """
+    """Entry point. Acquires a project-local lock, then streams refresh progress."""
+    _ensure_runtime_dirs()
     # Check lock
     if LOCK_FILE.exists():
         yield _sse_event("error", {

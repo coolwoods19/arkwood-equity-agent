@@ -1,34 +1,33 @@
 # ARKWOOD Financial Intelligence Unit (FIU)
 
-An institutional-grade stock research and portfolio monitoring system combining ARK Invest–style disruptive innovation analysis with automated data pipelines and a React dashboard.
+A stock research and portfolio monitoring system combining ARK Invest–style disruptive innovation analysis with automated data pipelines and a React dashboard.
 
 ## Overview
 
-ARKWOOD FIU fetches live market data, fundamentals, ARK holdings, news sentiment, and technical signals for any ticker — then scores it using the **TVS (Technology Value Score)** framework (0–125) to surface the highest-conviction disruptive innovation plays.
+ARKWOOD FIU fetches live market data, fundamentals, ARK holdings, news sentiment, and technical signals for any ticker. It computes a deterministic auto score (0-45), prepares the remaining analyst-scored TVS criteria, and surfaces dashboard ratings from the auto score plus the technical overlay.
 
 ## Features
 
-- **TVS Scoring** — quantitative + qualitative scoring across growth, valuation, and ARK conviction dimensions
+- **TVS Scoring** — deterministic auto scoring plus pending analyst-scored criteria
 - **Technical Overlay** — trend, momentum, breakout, and relative strength signals (separate from TVS)
 - **Daily Portfolio Monitor** — morning sweep with alerts, scoring, and Telegram notifications
 - **Deep Stock Analysis** — full 11-section ARKWOOD institutional research report
 - **Thesis Tracking** — per-ticker investment thesis files with confidence ratings
 - **Watchlist Screening** — idea scan to surface high-fit ARKWOOD candidates
-- **Backtest Evaluation** — strategy backtesting and grading pipeline
 - **React Dashboard** — live frontend with portfolio overview, watchlist, and analysis tabs
 
 ## Tech Stack
 
 - **Backend:** Python 3, FastAPI
 - **Frontend:** React + TypeScript + Vite
-- **Data:** yfinance, NewsAPI, ARK Invest CSVs
+- **Data:** yfinance, Yahoo Finance news, ARK Invest CSVs
 - **Notifications:** Telegram Bot API
 - **AI Orchestration:** Claude Code (claude.ai/code) with custom skills
 
 ## Directory Structure
 
 ```
-stock-agent/
+arkwood-equity-agent/
 ├── api/                    # FastAPI backend
 │   ├── main.py
 │   └── services/
@@ -44,12 +43,12 @@ stock-agent/
 │   ├── fetch_technicals.py
 │   ├── merge_data.py
 │   ├── compute_scores.py
-│   ├── compute_dynamic_alerts.py
-│   ├── run_backtest.py
 │   └── notify_telegram.py
 ├── data/
-│   ├── portfolio.csv       # Holdings: ticker, shares, avg_cost, alerts, sector
-│   ├── watchlist.csv       # Candidates under consideration
+│   ├── portfolio.example.csv
+│   ├── watchlist.example.csv
+│   ├── portfolio.csv       # Local only; ignored by git
+│   ├── watchlist.csv       # Local only; ignored by git
 │   ├── thesis/             # Per-ticker investment thesis markdown files
 │   └── snapshots/          # Daily JSON snapshots (gitignored)
 ├── reports/                # Generated reports (gitignored, local only)
@@ -80,15 +79,17 @@ python3 scripts/merge_data.py market.json fund.json ark.json news.json tech.json
 python3 scripts/compute_scores.py merged.json
 ```
 
-## TVS Scoring System (0–125)
+## Scoring System
 
-| Section | Max Points |
+The app separates mechanical scoring from analyst judgment:
+
+| Score | Max Points | Status |
 |---|---|
-| A. Growth & Innovation (revenue growth, moat, S-curve, margins, Wright's Law, convergence, disruption driver) | 70 |
-| B. Valuation & Fundamentals (forward PEG, cash runway, upside to target, relative multiples) | ±20 to +40 |
-| C. Momentum & ARK Conviction (ARK weight, recent catalyst) | 15 |
+| Auto score | 45 | Computed by `scripts/compute_scores.py` |
+| Manual/analyst criteria | 80 | Prepared as placeholders for Claude or analyst review |
+| Full TVS | 125 | Available only after manual criteria are filled |
 
-Technical overlay (trend/momentum/breakout/relative strength) is computed separately and does not affect the TVS score.
+Dashboard ratings currently use the auto score plus the technical overlay. Technical overlay (trend/momentum/breakout/relative strength) is computed separately and does not affect the TVS score.
 
 ## Setup
 
@@ -99,10 +100,39 @@ TELEGRAM_BOT_TOKEN=your_bot_token
 TELEGRAM_CHAT_ID=your_chat_id
 ```
 
+Copy the example env file if you want Telegram notifications:
+
+```bash
+cp .env.example .env
+```
+
+### Local data files
+
+Real portfolio and watchlist files are local-only and ignored by git:
+
+```bash
+cp data/portfolio.example.csv data/portfolio.csv
+cp data/watchlist.example.csv data/watchlist.csv
+```
+
+Edit those local CSVs with your own holdings and watchlist. Do not commit real positions, cost basis, generated snapshots, reports, or local Claude settings to a public repo.
+
 ### Install dependencies
 
 ```bash
-pip3 install -r api/requirements.txt
+pip3 install -r requirements.txt
+```
+
+### Smoke test
+
+```bash
+python3 scripts/fetch_market_data.py NVDA > /tmp/arkwood_market.json
+python3 scripts/fetch_fundamentals.py NVDA > /tmp/arkwood_fundamentals.json
+python3 scripts/fetch_ark_holdings.py NVDA > /tmp/arkwood_ark.json
+python3 scripts/fetch_news.py NVDA > /tmp/arkwood_news.json
+python3 scripts/fetch_technicals.py NVDA > /tmp/arkwood_technicals.json
+python3 scripts/merge_data.py /tmp/arkwood_market.json /tmp/arkwood_fundamentals.json /tmp/arkwood_ark.json /tmp/arkwood_news.json /tmp/arkwood_technicals.json > /tmp/arkwood_merged.json
+python3 scripts/compute_scores.py /tmp/arkwood_merged.json
 ```
 
 ### Run the API

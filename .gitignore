@@ -1,5 +1,8 @@
 reports/
 data/snapshots/
+data/portfolio.csv
+data/watchlist.csv
+.claude/settings.local.json
 __pycache__/
 *.pyc
 .env

@@ -34,9 +34,10 @@ function ScoreBar({ score, max }: { score: number; max: number }) {
 }
 
 export function ScoresTab({ scores }: { scores: Scores }) {
-  const { auto_scores, auto_total, max_possible_auto, max_possible_total, manual_scores_needed, notes, technical_overlay } = scores
+  const { auto_scores, auto_total, tvs_total, score_status, max_possible_auto, max_possible_total, manual_scores_needed, notes, technical_overlay } = scores
 
-  const scorePct = max_possible_total > 0 ? ((auto_total ?? 0) / max_possible_total) * 100 : 0
+  const autoScorePct = max_possible_auto > 0 ? ((auto_total ?? 0) / max_possible_auto) * 100 : 0
+  const tvsScorePct = tvs_total != null && max_possible_total > 0 ? (tvs_total / max_possible_total) * 100 : 0
 
   return (
     <div className="p-6 space-y-6">
@@ -45,16 +46,23 @@ export function ScoresTab({ scores }: { scores: Scores }) {
         <div className="flex items-end justify-between mb-3">
           <div>
             <p className="text-[10px] font-mono uppercase tracking-widest text-ink-3">TVS Auto Score</p>
-            <p className="font-mono text-3xl font-semibold text-ink">{auto_total ?? '—'}<span className="text-base font-normal text-ink-3">/{max_possible_total}</span></p>
+            <p className="font-mono text-3xl font-semibold text-ink">{auto_total ?? '—'}<span className="text-base font-normal text-ink-3">/{max_possible_auto}</span></p>
           </div>
-          <p className="text-xs text-ink-3 font-mono">Auto-scored: {auto_total}/{max_possible_auto}</p>
+          <p className="text-xs text-ink-3 font-mono">
+            {score_status === 'FULL_TVS' ? `Full TVS: ${tvs_total}/${max_possible_total}` : 'Full TVS pending manual criteria'}
+          </p>
         </div>
         <div className="h-2 bg-border rounded-full overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all ${scorePct >= 80 ? 'bg-emerald-500' : scorePct >= 60 ? 'bg-teal-400' : scorePct >= 40 ? 'bg-amber-400' : 'bg-red-400'}`}
-            style={{ width: `${scorePct}%` }}
+            className={`h-full rounded-full transition-all ${autoScorePct >= 80 ? 'bg-emerald-500' : autoScorePct >= 60 ? 'bg-teal-400' : autoScorePct >= 40 ? 'bg-amber-400' : 'bg-red-400'}`}
+            style={{ width: `${autoScorePct}%` }}
           />
         </div>
+        {score_status === 'FULL_TVS' && (
+          <div className="h-1 bg-border rounded-full overflow-hidden mt-2">
+            <div className="h-full rounded-full bg-ink-2" style={{ width: `${tvsScorePct}%` }} />
+          </div>
+        )}
       </div>
 
       {/* Auto scores */}

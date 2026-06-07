@@ -431,17 +431,29 @@ def score_ticker(data: dict) -> dict:
     if technicals and not technicals.get("_missing"):
         technical_overlay = compute_technical_overlay(technicals)
 
+    manual_scores_needed = {
+        "tech_moat": None,          # 0 or 10
+        "s_curve_adoption": None,   # 0 or 10
+        "wrights_law": None,        # 0 or 10
+        "tech_convergence": None,   # 0, 3, 5-7, or 10
+        "disruption_driver": None,  # 0 or 10
+        "below_5yr_peer_avg": None, # 0 or 10
+    }
+    manual_values = list(manual_scores_needed.values())
+    manual_total = (
+        sum(manual_values)
+        if all(isinstance(v, (int, float)) for v in manual_values)
+        else None
+    )
+    tvs_total = auto_total + manual_total if manual_total is not None else None
+
     return {
         "auto_scores": auto_scores,
         "auto_total": auto_total,
-        "manual_scores_needed": {
-            "tech_moat": None,          # 0 or 10
-            "s_curve_adoption": None,   # 0 or 10
-            "wrights_law": None,        # 0 or 10
-            "tech_convergence": None,   # 0, 3, 5-7, or 10
-            "disruption_driver": None,  # 0 or 10
-            "below_5yr_peer_avg": None, # 0 or 10
-        },
+        "manual_scores_needed": manual_scores_needed,
+        "manual_total": manual_total,
+        "tvs_total": tvs_total,
+        "score_status": "FULL_TVS" if tvs_total is not None else "AUTO_ONLY",
         "max_possible_auto": 45,   # sum of all auto-scored max values
         "max_possible_total": 125,
         "notes": notes,
