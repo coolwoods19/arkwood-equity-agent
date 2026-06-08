@@ -91,6 +91,19 @@ The app separates mechanical scoring from analyst judgment:
 
 Dashboard ratings currently use the auto score plus the technical overlay. Technical overlay (trend/momentum/breakout/relative strength) is computed separately and does not affect the TVS score.
 
+## AI Chokepoint Overlay
+
+For AI infrastructure names, ARKWOOD can attach an optional two-axis chokepoint profile from `data/chokepoints/{TICKER}.json`.
+
+The overlay intentionally avoids a single blended score:
+
+| Axis | Max Points | Purpose |
+|---|---:|---|
+| Chokepoint Durability | 50 | Measures necessity, scarcity, pricing power, substitution defense, and inference resilience |
+| Entry / Risk Quality | 30 | Measures capex shock resilience, valuation/crowdedness, and idiosyncratic concentration risk |
+
+This lets Tier 1 chokepoints such as ASML remain visibly different from cheaper cyclical AI beneficiaries. TVS remains the disruptive-quality lens; the chokepoint overlay is the value-capture and position-sizing lens.
+
 ## Setup
 
 ### Environment variables (optional)

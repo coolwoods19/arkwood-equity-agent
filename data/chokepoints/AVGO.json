@@ -1,0 +1,26 @@
+{
+  "ticker": "AVGO",
+  "ai_role": "Custom AI ASICs and AI data-center networking",
+  "assessment_mode": "Hybrid AI Infrastructure Winner",
+  "scores": {
+    "durability": {
+      "necessity": 8,
+      "structural_scarcity": 7,
+      "pricing_power": 8,
+      "supply_substitution_defense": 5,
+      "inference_resilience": 7
+    },
+    "entry_risk": {
+      "capex_shock_resilience": 3,
+      "valuation_crowdedness": 3,
+      "concentration_idiosyncratic_risk": 2
+    }
+  },
+  "risk_locations": ["Customer concentration", "Project execution", "Valuation"],
+  "sizing_bias": "Satellite / tactical only",
+  "tvs_tiebreaker": "Strong TVS can support ownership, but poor entry/risk quality should limit sizing.",
+  "technical_timing_rule": "Technicals can gate adds; avoid chasing EXTENDED setups unless valuation and customer diversification improve.",
+  "rationale": "Real AI infrastructure moat through custom silicon and networking, but risk is concentrated in a handful of hyperscaler roadmaps and a valuation that prices strong execution.",
+  "last_reviewed": "2026-06-07",
+  "data_quality": "MANUAL"
+}

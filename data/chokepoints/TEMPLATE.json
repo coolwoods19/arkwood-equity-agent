@@ -1,0 +1,26 @@
+{
+  "ticker": "TICKER",
+  "ai_role": "AI value-chain role",
+  "assessment_mode": "Infrastructure Chokepoint",
+  "scores": {
+    "durability": {
+      "necessity": 0,
+      "structural_scarcity": 0,
+      "pricing_power": 0,
+      "supply_substitution_defense": 0,
+      "inference_resilience": 0
+    },
+    "entry_risk": {
+      "capex_shock_resilience": 0,
+      "valuation_crowdedness": 0,
+      "concentration_idiosyncratic_risk": 0
+    }
+  },
+  "risk_locations": [],
+  "sizing_bias": null,
+  "tvs_tiebreaker": "If durability is Tier 1, allow core status even when TVS growth criteria are only medium.",
+  "technical_timing_rule": "For Tier 1 chokepoints, technicals guide add pacing but should not block ownership.",
+  "rationale": "",
+  "last_reviewed": "YYYY-MM-DD",
+  "data_quality": "MANUAL"
+}

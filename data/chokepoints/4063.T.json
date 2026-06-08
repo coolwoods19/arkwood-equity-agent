@@ -1,0 +1,26 @@
+{
+  "ticker": "4063.T",
+  "ai_role": "Semiconductor wafers, silicon materials, and upstream semiconductor inputs",
+  "assessment_mode": "Infrastructure Chokepoint",
+  "scores": {
+    "durability": {
+      "necessity": 8,
+      "structural_scarcity": 7,
+      "pricing_power": 6,
+      "supply_substitution_defense": 7,
+      "inference_resilience": 8
+    },
+    "entry_risk": {
+      "capex_shock_resilience": 5,
+      "valuation_crowdedness": 5,
+      "concentration_idiosyncratic_risk": 6
+    }
+  },
+  "risk_locations": ["Semiconductor materials cycle", "Japan FX", "Wafer demand timing"],
+  "sizing_bias": "Satellite / upstream chokepoint",
+  "tvs_tiebreaker": "Upstream materials chokepoint can complement TVS even if growth is more cyclical than software or accelerator leaders.",
+  "technical_timing_rule": "Technical and cycle timing should guide adds.",
+  "rationale": "Shin-Etsu is an upstream semiconductor materials leader with important wafer and materials exposure. It is a quieter AI supply-chain beneficiary rather than a direct accelerator platform.",
+  "last_reviewed": "2026-06-07",
+  "data_quality": "MANUAL"
+}

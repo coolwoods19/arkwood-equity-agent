@@ -1,0 +1,26 @@
+{
+  "ticker": "MU",
+  "ai_role": "HBM and advanced memory for AI accelerators",
+  "assessment_mode": "Hybrid AI Infrastructure Winner",
+  "scores": {
+    "durability": {
+      "necessity": 8,
+      "structural_scarcity": 6,
+      "pricing_power": 5,
+      "supply_substitution_defense": 5,
+      "inference_resilience": 8
+    },
+    "entry_risk": {
+      "capex_shock_resilience": 3,
+      "valuation_crowdedness": 6,
+      "concentration_idiosyncratic_risk": 4
+    }
+  },
+  "risk_locations": ["Memory cycle", "HBM qualification", "AI stack correlation"],
+  "sizing_bias": "Satellite / tactical only",
+  "tvs_tiebreaker": "Treat as a cyclical AI bottleneck: TVS and valuation can support adds, but do not classify as core monopoly infrastructure.",
+  "technical_timing_rule": "Technical and macro timing matter heavily; prefer SETUP or STRONG_SETUP for adds.",
+  "rationale": "HBM is necessary for AI scaling and inference can increase memory intensity, but memory pricing and supply expansion remain cyclical.",
+  "last_reviewed": "2026-06-07",
+  "data_quality": "MANUAL"
+}

@@ -5,9 +5,10 @@ import { RatingPill } from './RatingPill'
 import { OverviewTab } from './OverviewTab'
 import { ThesisTab } from './ThesisTab'
 import { ScoresTab } from './ScoresTab'
+import { ChokepointTab } from './ChokepointTab'
 import { fmtPrice, fmtPct, signClass } from '../utils/formatters'
 
-type Tab = 'overview' | 'thesis' | 'scores'
+type Tab = 'overview' | 'thesis' | 'scores' | 'chokepoint'
 
 interface Props {
   ticker: string | null
@@ -65,6 +66,7 @@ export function DetailPanel({ ticker }: Props) {
     { id: 'overview', label: 'Overview' },
     { id: 'thesis', label: 'Thesis' },
     { id: 'scores', label: 'Scores' },
+    { id: 'chokepoint', label: 'Chokepoint' },
   ]
 
   return (
@@ -77,6 +79,11 @@ export function DetailPanel({ ticker }: Props) {
               <h1 className="font-mono font-bold text-2xl text-ink tracking-wide">{detail.ticker}</h1>
               <RatingPill rating={detail.rating} />
               <OverlayBadge rating={detail.scores.technical_overlay?.overlay_rating ?? null} />
+              {detail.chokepoint && (
+                <span className="text-[10px] font-mono bg-teal-50 text-teal-700 border border-teal-200 px-1.5 py-0.5 rounded">
+                  CHOKEPOINT {detail.chokepoint.durability.score}/{detail.chokepoint.durability.max_score}
+                </span>
+              )}
               {detail.data_quality !== 'FULL' && (
                 <span className="text-[10px] font-mono bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded">
                   {detail.data_quality} DATA
@@ -118,6 +125,7 @@ export function DetailPanel({ ticker }: Props) {
         {tab === 'overview' && <OverviewTab detail={detail} />}
         {tab === 'thesis' && <ThesisTab ticker={detail.ticker} markdown={detail.thesis_markdown} />}
         {tab === 'scores' && <ScoresTab scores={detail.scores} />}
+        {tab === 'chokepoint' && <ChokepointTab ticker={detail.ticker} chokepoint={detail.chokepoint} />}
       </div>
     </div>
   )

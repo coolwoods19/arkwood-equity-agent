@@ -1,0 +1,26 @@
+{
+  "ticker": "ARM",
+  "ai_role": "Semiconductor IP for CPUs, edge AI, mobile, and custom compute",
+  "assessment_mode": "Hybrid AI Infrastructure Winner",
+  "scores": {
+    "durability": {
+      "necessity": 7,
+      "structural_scarcity": 7,
+      "pricing_power": 8,
+      "supply_substitution_defense": 6,
+      "inference_resilience": 8
+    },
+    "entry_risk": {
+      "capex_shock_resilience": 7,
+      "valuation_crowdedness": 2,
+      "concentration_idiosyncratic_risk": 6
+    }
+  },
+  "risk_locations": ["Valuation", "RISC-V substitution", "Royalty model expectations"],
+  "sizing_bias": "Satellite / valuation watch",
+  "tvs_tiebreaker": "Strong platform economics can support ownership, but valuation should cap sizing.",
+  "technical_timing_rule": "Avoid adding when EXTENDED; require valuation or technical pullback for new buys.",
+  "rationale": "Arm has strong semiconductor IP economics and broad edge/inference relevance, but it is not an absolute AI accelerator chokepoint and often trades with high expectations.",
+  "last_reviewed": "2026-06-07",
+  "data_quality": "MANUAL"
+}

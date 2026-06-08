@@ -1,0 +1,26 @@
+{
+  "ticker": "ASML",
+  "ai_role": "EUV lithography / leading-edge semiconductor equipment",
+  "assessment_mode": "Infrastructure Chokepoint",
+  "scores": {
+    "durability": {
+      "necessity": 10,
+      "structural_scarcity": 10,
+      "pricing_power": 10,
+      "supply_substitution_defense": 10,
+      "inference_resilience": 10
+    },
+    "entry_risk": {
+      "capex_shock_resilience": 9,
+      "valuation_crowdedness": 3,
+      "concentration_idiosyncratic_risk": 5
+    }
+  },
+  "risk_locations": ["Valuation", "Export policy", "Semicap cycle"],
+  "sizing_bias": "Core watch / add on dislocation",
+  "tvs_tiebreaker": "Tier 1 chokepoint durability can justify core status even if TVS growth screens are only medium.",
+  "technical_timing_rule": "Use technicals for add pacing only; prefer fundamental or policy-driven dislocations over RSI-only timing.",
+  "rationale": "Literal EUV monopoly with architecture-agnostic AI exposure. Risk sits mostly in valuation, policy, and semiconductor capex timing rather than substitution.",
+  "last_reviewed": "2026-06-07",
+  "data_quality": "MANUAL"
+}

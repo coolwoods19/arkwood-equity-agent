@@ -1,0 +1,26 @@
+{
+  "ticker": "MSFT",
+  "ai_role": "Enterprise AI distribution, Azure cloud, and productivity platform",
+  "assessment_mode": "Disruptive Growth Compounder",
+  "scores": {
+    "durability": {
+      "necessity": 7,
+      "structural_scarcity": 7,
+      "pricing_power": 8,
+      "supply_substitution_defense": 8,
+      "inference_resilience": 8
+    },
+    "entry_risk": {
+      "capex_shock_resilience": 6,
+      "valuation_crowdedness": 4,
+      "concentration_idiosyncratic_risk": 7
+    }
+  },
+  "risk_locations": ["Valuation", "AI monetization pace", "Cloud capex"],
+  "sizing_bias": "Core compounder candidate",
+  "tvs_tiebreaker": "TVS should dominate because MSFT is an AI distribution and monetization platform, not a pure physical chokepoint.",
+  "technical_timing_rule": "Technicals guide add pacing; core ownership should depend on enterprise AI monetization and Azure durability.",
+  "rationale": "Microsoft has scarce enterprise distribution, Azure infrastructure, and productivity workflow control. It is a core AI compounder rather than a hard supply-chain bottleneck.",
+  "last_reviewed": "2026-06-07",
+  "data_quality": "MANUAL"
+}

@@ -160,6 +160,29 @@ export interface Scores {
   technical_overlay: TechnicalOverlay | null
 }
 
+export interface ChokepointAxis {
+  score: number
+  max_score: number
+  classification: string
+  scores: Record<string, number>
+  labels: Record<string, string>
+}
+
+export interface ChokepointOverlay {
+  ticker: string
+  ai_role: string | null
+  assessment_mode: string
+  durability: ChokepointAxis
+  entry_risk: ChokepointAxis
+  risk_locations: string[]
+  sizing_bias: string
+  tvs_tiebreaker: string | null
+  technical_timing_rule: string | null
+  rationale: string | null
+  last_reviewed: string | null
+  data_quality: string
+}
+
 export interface ArkData {
   ark_held: boolean
   conviction_level: string
@@ -188,6 +211,7 @@ export interface TickerDetail {
   snapshot_date: string | null
   rating: Rating | null
   data_quality: DataQuality
+  chokepoint: ChokepointOverlay | null
   market: MarketData
   fundamentals: Fundamentals
   technicals: Technicals

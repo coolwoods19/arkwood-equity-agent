@@ -1,0 +1,26 @@
+{
+  "ticker": "NVDA",
+  "ai_role": "AI GPU platform, accelerator systems, CUDA, and AI networking",
+  "assessment_mode": "Disruptive Growth Compounder",
+  "scores": {
+    "durability": {
+      "necessity": 10,
+      "structural_scarcity": 8,
+      "pricing_power": 9,
+      "supply_substitution_defense": 8,
+      "inference_resilience": 7
+    },
+    "entry_risk": {
+      "capex_shock_resilience": 4,
+      "valuation_crowdedness": 3,
+      "concentration_idiosyncratic_risk": 4
+    }
+  },
+  "risk_locations": ["Valuation", "Hyperscaler capex", "Custom ASIC substitution"],
+  "sizing_bias": "Core hold / add selectively",
+  "tvs_tiebreaker": "High TVS and high chokepoint durability can support core status, but valuation and capex sensitivity should gate new adds.",
+  "technical_timing_rule": "For core ownership, technicals guide add pacing; avoid chasing EXTENDED setups.",
+  "rationale": "NVIDIA controls the dominant AI accelerator platform through GPUs, CUDA, systems, and networking. Risk is less about current moat quality and more about valuation, hyperscaler capex digestion, and long-run custom ASIC substitution.",
+  "last_reviewed": "2026-06-07",
+  "data_quality": "MANUAL"
+}

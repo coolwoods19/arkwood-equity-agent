@@ -1,0 +1,26 @@
+{
+  "ticker": "3436.T",
+  "ai_role": "Silicon wafer supplier for semiconductor manufacturing",
+  "assessment_mode": "Hybrid AI Infrastructure Winner",
+  "scores": {
+    "durability": {
+      "necessity": 7,
+      "structural_scarcity": 6,
+      "pricing_power": 5,
+      "supply_substitution_defense": 6,
+      "inference_resilience": 7
+    },
+    "entry_risk": {
+      "capex_shock_resilience": 4,
+      "valuation_crowdedness": 5,
+      "concentration_idiosyncratic_risk": 5
+    }
+  },
+  "risk_locations": ["Wafer cycle", "Pricing pressure", "Japan FX"],
+  "sizing_bias": "Watchlist / tactical",
+  "tvs_tiebreaker": "Treat as an upstream cyclical bottleneck; require attractive valuation and cycle timing.",
+  "technical_timing_rule": "Technical and semiconductor-cycle timing should gate adds.",
+  "rationale": "SUMCO participates in the silicon wafer layer needed for semiconductor scaling, but wafer markets can be cyclical and pricing power is less durable than Tier 1 equipment or foundry chokepoints.",
+  "last_reviewed": "2026-06-07",
+  "data_quality": "MANUAL"
+}

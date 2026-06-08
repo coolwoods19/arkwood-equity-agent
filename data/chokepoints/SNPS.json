@@ -1,0 +1,26 @@
+{
+  "ticker": "SNPS",
+  "ai_role": "EDA software, IP, verification, and chip design workflow",
+  "assessment_mode": "Infrastructure Chokepoint",
+  "scores": {
+    "durability": {
+      "necessity": 9,
+      "structural_scarcity": 8,
+      "pricing_power": 8,
+      "supply_substitution_defense": 8,
+      "inference_resilience": 9
+    },
+    "entry_risk": {
+      "capex_shock_resilience": 7,
+      "valuation_crowdedness": 4,
+      "concentration_idiosyncratic_risk": 7
+    }
+  },
+  "risk_locations": ["Valuation", "Semiconductor design cycle", "Export controls"],
+  "sizing_bias": "Core or satellite, selective entry",
+  "tvs_tiebreaker": "EDA chokepoint durability can support core infrastructure status even if near-term growth is less explosive than accelerators.",
+  "technical_timing_rule": "Technicals guide add pacing; valuation discipline matters because EDA quality is usually well recognized.",
+  "rationale": "Synopsys is embedded in advanced chip design and verification workflows. Switching costs and mission-critical design tools create durable value capture.",
+  "last_reviewed": "2026-06-07",
+  "data_quality": "MANUAL"
+}

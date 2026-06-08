@@ -1,0 +1,26 @@
+{
+  "ticker": "VRT",
+  "ai_role": "AI data-center power, thermal management, and liquid cooling infrastructure",
+  "assessment_mode": "Hybrid AI Infrastructure Winner",
+  "scores": {
+    "durability": {
+      "necessity": 8,
+      "structural_scarcity": 6,
+      "pricing_power": 6,
+      "supply_substitution_defense": 6,
+      "inference_resilience": 8
+    },
+    "entry_risk": {
+      "capex_shock_resilience": 5,
+      "valuation_crowdedness": 3,
+      "concentration_idiosyncratic_risk": 6
+    }
+  },
+  "risk_locations": ["Valuation", "Data-center capex cycle", "Cooling standard evolution"],
+  "sizing_bias": "Satellite / tactical only",
+  "tvs_tiebreaker": "Physical infrastructure exposure can complement TVS, but valuation and capex cycle should cap sizing.",
+  "technical_timing_rule": "Technical timing should gate adds; avoid chasing EXTENDED setups.",
+  "rationale": "Vertiv is directly levered to AI data-center power density and cooling requirements, but the stock can be cyclical and expectations may already reflect strong AI infrastructure demand.",
+  "last_reviewed": "2026-06-07",
+  "data_quality": "MANUAL"
+}

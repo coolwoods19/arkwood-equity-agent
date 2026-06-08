@@ -1,0 +1,26 @@
+{
+  "ticker": "TSM",
+  "ai_role": "Leading-edge foundry and advanced packaging / CoWoS capacity",
+  "assessment_mode": "Infrastructure Chokepoint",
+  "scores": {
+    "durability": {
+      "necessity": 10,
+      "structural_scarcity": 9,
+      "pricing_power": 8,
+      "supply_substitution_defense": 9,
+      "inference_resilience": 10
+    },
+    "entry_risk": {
+      "capex_shock_resilience": 7,
+      "valuation_crowdedness": 5,
+      "concentration_idiosyncratic_risk": 4
+    }
+  },
+  "risk_locations": ["Taiwan geopolitics", "Customer concentration", "Semiconductor cycle"],
+  "sizing_bias": "Core watch / add selectively",
+  "tvs_tiebreaker": "Tier 1 foundry chokepoint durability can justify core status even when TVS growth screens are moderate.",
+  "technical_timing_rule": "Use technicals for add pacing only; fundamental/geopolitical dislocations matter more for Tier 1 infrastructure.",
+  "rationale": "TSMC is central to AI chip manufacturing and advanced packaging. It is architecture-agnostic, but Taiwan/geopolitical risk and customer concentration require sizing discipline.",
+  "last_reviewed": "2026-06-07",
+  "data_quality": "MANUAL"
+}

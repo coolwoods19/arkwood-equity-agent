@@ -1,0 +1,26 @@
+{
+  "ticker": "000660.KS",
+  "ai_role": "HBM memory leader for AI accelerators",
+  "assessment_mode": "Hybrid AI Infrastructure Winner",
+  "scores": {
+    "durability": {
+      "necessity": 8,
+      "structural_scarcity": 7,
+      "pricing_power": 6,
+      "supply_substitution_defense": 5,
+      "inference_resilience": 8
+    },
+    "entry_risk": {
+      "capex_shock_resilience": 3,
+      "valuation_crowdedness": 7,
+      "concentration_idiosyncratic_risk": 3
+    }
+  },
+  "risk_locations": ["Memory cycle", "NVIDIA stack correlation", "Korea/Taiwan supply chain"],
+  "sizing_bias": "Satellite / cyclical value tilt",
+  "tvs_tiebreaker": "Treat as a cyclical structural bottleneck; valuation and macro timing matter heavily.",
+  "technical_timing_rule": "Technical and macro timing should gate adds; prefer SETUP or STRONG_SETUP and avoid chasing EXTENDED moves.",
+  "rationale": "SK Hynix is a key HBM leader with a real AI memory bottleneck, but memory pricing remains cyclical and highly correlated with AI accelerator demand.",
+  "last_reviewed": "2026-06-07",
+  "data_quality": "MANUAL"
+}

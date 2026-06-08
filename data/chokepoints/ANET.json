@@ -1,0 +1,26 @@
+{
+  "ticker": "ANET",
+  "ai_role": "Ethernet AI data-center networking systems and software",
+  "assessment_mode": "Hybrid AI Infrastructure Winner",
+  "scores": {
+    "durability": {
+      "necessity": 8,
+      "structural_scarcity": 6,
+      "pricing_power": 7,
+      "supply_substitution_defense": 6,
+      "inference_resilience": 8
+    },
+    "entry_risk": {
+      "capex_shock_resilience": 4,
+      "valuation_crowdedness": 4,
+      "concentration_idiosyncratic_risk": 4
+    }
+  },
+  "risk_locations": ["Hyperscaler capex", "Customer concentration", "NVIDIA networking competition"],
+  "sizing_bias": "Satellite / tactical only",
+  "tvs_tiebreaker": "Needs strong TVS and favorable entry because chokepoint durability is high but not monopolistic.",
+  "technical_timing_rule": "Technicals can gate adds; avoid chasing EXTENDED moves.",
+  "rationale": "Arista is a strong beneficiary of Ethernet-based AI cluster networking, but the category remains competitive and hyperscaler spending can be lumpy.",
+  "last_reviewed": "2026-06-07",
+  "data_quality": "MANUAL"
+}

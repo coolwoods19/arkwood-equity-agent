@@ -1,0 +1,26 @@
+{
+  "ticker": "AMD",
+  "ai_role": "AI accelerator challenger and x86 CPU platform",
+  "assessment_mode": "Hybrid AI Infrastructure Winner",
+  "scores": {
+    "durability": {
+      "necessity": 6,
+      "structural_scarcity": 5,
+      "pricing_power": 5,
+      "supply_substitution_defense": 5,
+      "inference_resilience": 6
+    },
+    "entry_risk": {
+      "capex_shock_resilience": 4,
+      "valuation_crowdedness": 4,
+      "concentration_idiosyncratic_risk": 5
+    }
+  },
+  "risk_locations": ["Execution", "NVIDIA competition", "Semiconductor cycle"],
+  "sizing_bias": "Satellite / tactical only",
+  "tvs_tiebreaker": "Requires strong TVS, execution evidence, and favorable entry because chokepoint durability is below Tier 1.",
+  "technical_timing_rule": "Technical timing should gate adds; avoid adding when EXTENDED.",
+  "rationale": "AMD is a credible AI accelerator and CPU challenger, but it is not the primary chokepoint. The opportunity depends on execution, ecosystem adoption, and share gain against NVIDIA.",
+  "last_reviewed": "2026-06-07",
+  "data_quality": "MANUAL"
+}

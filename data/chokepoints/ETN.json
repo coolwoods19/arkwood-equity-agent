@@ -1,0 +1,26 @@
+{
+  "ticker": "ETN",
+  "ai_role": "Electrical equipment, power distribution, and grid infrastructure for AI data centers",
+  "assessment_mode": "Infrastructure Chokepoint",
+  "scores": {
+    "durability": {
+      "necessity": 8,
+      "structural_scarcity": 6,
+      "pricing_power": 7,
+      "supply_substitution_defense": 7,
+      "inference_resilience": 8
+    },
+    "entry_risk": {
+      "capex_shock_resilience": 6,
+      "valuation_crowdedness": 4,
+      "concentration_idiosyncratic_risk": 7
+    }
+  },
+  "risk_locations": ["Valuation", "Infrastructure cycle", "Project timing"],
+  "sizing_bias": "Core or satellite, selective entry",
+  "tvs_tiebreaker": "Infrastructure chokepoint durability can support ownership even if it screens as old-economy rather than classic ARK growth.",
+  "technical_timing_rule": "Technicals guide add pacing; fundamental backlog and electrical demand matter more for core sizing.",
+  "rationale": "Eaton benefits from AI data-center electrification, power distribution, and grid bottlenecks. It is diversified, but valuation and infrastructure-cycle timing matter.",
+  "last_reviewed": "2026-06-07",
+  "data_quality": "MANUAL"
+}

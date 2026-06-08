@@ -1,0 +1,26 @@
+{
+  "ticker": "GOOG",
+  "ai_role": "Hyperscaler, AI model platform, TPU owner, search and cloud AI operator",
+  "assessment_mode": "Disruptive Growth Compounder",
+  "scores": {
+    "durability": {
+      "necessity": 7,
+      "structural_scarcity": 6,
+      "pricing_power": 7,
+      "supply_substitution_defense": 7,
+      "inference_resilience": 8
+    },
+    "entry_risk": {
+      "capex_shock_resilience": 6,
+      "valuation_crowdedness": 6,
+      "concentration_idiosyncratic_risk": 6
+    }
+  },
+  "risk_locations": ["AI search disruption", "Cloud competition", "Regulatory risk"],
+  "sizing_bias": "Core compounder candidate",
+  "tvs_tiebreaker": "TVS should dominate because GOOG is more AI platform/operator than pure supply-chain chokepoint.",
+  "technical_timing_rule": "Technicals guide add pacing, but core ownership should be driven by fundamentals and AI platform durability.",
+  "rationale": "Google is not a pure chokepoint supplier, but it owns scarce AI assets: distribution, data, models, cloud infrastructure, and custom TPU capability. Risk sits in search monetization, regulation, and cloud execution.",
+  "last_reviewed": "2026-06-07",
+  "data_quality": "MANUAL"
+}

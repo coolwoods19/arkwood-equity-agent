@@ -4,6 +4,8 @@ data/portfolio.csv
 data/watchlist.csv
 .claude/settings.local.json
 __pycache__/
+.venv/
 *.pyc
+.DS_Store
 .env
 *.log

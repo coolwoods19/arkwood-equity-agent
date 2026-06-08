@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Optional
 from datetime import date, datetime
 
+from services.chokepoint_reader import read_chokepoint_profile
+
 
 def _safe(v):
     """Return None for NaN/Inf floats so FastAPI can serialize the response."""
@@ -287,6 +289,7 @@ def build_ticker_detail(ticker: str, holding_csv: Optional[dict], watchlist_csv:
         "snapshot_date": get_latest_snapshot_date(),
         "rating": derive_rating(auto_total, overlay_rating),
         "data_quality": data_quality,
+        "chokepoint": read_chokepoint_profile(ticker),
         "market": {
             "current_price": market_raw.get("current_price"),
             "market_cap": market_raw.get("market_cap"),
